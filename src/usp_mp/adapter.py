@@ -20,14 +20,15 @@ class USP_MP_Adapter:
     VERSION = "2.4.0-004"
     WSDL_PATH = os.path.join(os.path.dirname(__file__), 'wsdl', 'zuseaa_p2.wsdl')
     CA_PATH = os.path.join(os.path.dirname(__file__), 'certs', 'brz_ca.cer')
+    TIMEOUT = 10
 
-    class param_types:
+    class ParamTypes:
         AllDeliveriesType: type[ZeepBaseType]
         PagingType: type[ZeepBaseType]
         NewDeliveriesOnlyType: type[ZeepBaseType]
-    types = param_types()
+    types = ParamTypes()
 
-    def __init__(self, p12_path: str, p12_pass: str|None=None, prod: bool=False) -> None:
+    def __init__(self, p12_path: str, p12_pass: str|None=None, *, prod: bool=False) -> None:
         self.endpoint = self.PROD_ENDPOINT_URL if prod else self.DEMO_ENDPOINT_URL
         self.soap_endpoint = urljoin(self.endpoint, 'soap')
         self.attachment_endpoint = urljoin(self.endpoint, 'attachment')
@@ -82,13 +83,13 @@ class USP_MP_Adapter:
             self.session = requests.Session()
             self.session.verify = uspmp.CA_PATH
 
-            transport = Transport(session=self.session, timeout=10, operation_timeout=10)
+            transport = Transport(session=self.session, timeout=uspmp.TIMEOUT, operation_timeout=uspmp.TIMEOUT)
             # Note: strict=True throws Exception for GetDelivery()
             # zeep.exceptions.XMLParseError: Unexpected element '{http://reference.e-government.gv.at/namespace/persondata/phase2/20181206#}CorporateBody', expected '{http://reference.e-government.gv.at/namespace/persondata/phase2/20181206#}Person'
             # I don't really care…
             settings = Settings(strict=False, extra_http_headers=uspmp.headers)  # pyright: ignore[reportCallIssue]
 
-            # We can't get the wsdl from the well known endpoint ?wsdl, need to include it in project
+            # We can't get the wsdl from the well known endpoint ?wsdl, load wsdl from local file
             self.client = Client(wsdl=uspmp.WSDL_PATH, transport=transport, settings=settings)
 
             # we already checked that client bindings contains services
