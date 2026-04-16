@@ -45,7 +45,7 @@ def main():
         env_name = p12_pass[4:]
         p12_pass = os.environ.get(env_name)
     if p12_pass is None:
-        p12_pass = getpass.getpass("Enter .p12 password: ")
+        p12_pass = getpass.getpass(f"Enter {args.client_certificate} password: ")
 
     if args.debug:
         setup_logging()
