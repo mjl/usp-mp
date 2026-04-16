@@ -144,12 +144,15 @@ class Delivery(USP_MP_Base):
         for att in all_attachments:
             yield Attachment(self.connection, delivery.DeliveryID, att)
 
-    def close(self):
+    def close(self, delete=False):
         assert self.connection.service
         r = self.connection.service.CloseDelivery(
             self.id, Version=self.connection.uspmp.VERSION
         )
         self.raise_on_error(r, 'close delivery')
+
+        if delete:
+            self.delete()
 
     def delete(self):
         assert self.connection.service
