@@ -8,6 +8,7 @@ Changes since `1.0.20260224` (the version number has not been bumped; commits da
 
 ### Added
 
+- CLI option `--client-password-file PATH`.
 - Demo script `--save` option: saves each delivery's attachments into a numbered directory and marks the delivery as read only after saving.
 - `uspmp` console script (`[project.scripts]`), installed with the package. The CLI now lives in `src/usp_mp/cli.py`.
 - Installation instructions in `README.md`.
@@ -17,6 +18,7 @@ Changes since `1.0.20260224` (the version number has not been bumped; commits da
 
 ### Changed
 
+- CLI: `--client-certificate` is required and must exist; invalid arguments (missing `ENV:` variable, bad `--download` directory) are usage errors with exit status 2. Runtime errors print a single `uspmp: error: …` line and exit with status 1 instead of a traceback (`--debug` shows it). A non-empty literal `--client-password` prints a warning.
 - Clearer password prompt in the CLI (names the certificate file).
 - `howto.md` moved into `docs/`.
 - **The demo script `uspmp.py` is gone.** Use the `uspmp` command instead of `python uspmp.py`.

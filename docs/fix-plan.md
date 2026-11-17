@@ -49,7 +49,7 @@ Consider a separate, longer read timeout for large attachments: `timeout=(10, 60
 - `hash` (local): fixed by 1.2.
 - `all` (parameter of `Mailbox.deliveries`): this is **public API**, used in the docs and the CLI. The shadowing is local and harmless, so the recommendation is to leave it. If you want it gone, add `new_only: bool = False` and keep `all=` working with a `DeprecationWarning` for one release. **Decision needed** (see the end of this plan).
 
-### 1.4 CLI argument handling [B7, S3]
+### 1.4 CLI argument handling [B7, S3] — done (literal password kept, with a warning)
 
 `cli.py`:
 - `--client-certificate`: set `required=True`.

@@ -27,13 +27,20 @@ uspmp \
 
 Options:
 
+- `--client-certificate` path to the `.p12` file (required)
 - `--all` fetch all (not just new) deliveries
+- `--save` save attachments under `--download` (default: current directory) and mark each saved delivery as read
 - `--prod` use production endpoint (default: demo)
-- `--debug` trace SOAP calls
+- `--debug` trace SOAP calls and show full tracebacks on errors
 
 Password handling:
 
-- If `--client-password` is omitted, you are prompted; `ENV:VARNAME` reads the password from the environment.
+- `--client-password ENV:VARNAME` reads the password from the environment variable (an unset variable is an error).
+- `--client-password-file PATH` reads it from the first line of a file.
+- Without either option, you are prompted.
+- `--client-password ''` means the `.p12` has no password. A literal password also works, but it is visible to other users in the process list, so `uspmp` prints a warning.
+
+Exit status: 0 on success, 1 on errors (such as a wrong password or a service error, reported as a single line), 2 on invalid arguments.
 
 ## Quick start (library)
 
