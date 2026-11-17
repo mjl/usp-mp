@@ -1,0 +1,4 @@
+# Ship the complete test suite in the sdist (setuptools only picks up tests/test_*.py by default,
+# which leaves out conftest.py, fakes.py, snapshot.py and tests/data/).
+graft tests
+global-exclude __pycache__ *.py[cod]
