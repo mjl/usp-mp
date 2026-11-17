@@ -6,6 +6,7 @@ import re
 import os.path
 import mimetypes
 import hashlib
+import hmac
 from datetime import datetime
 from .adapter import USP_MP_Adapter
 
@@ -77,20 +78,28 @@ class Attachment(USP_MP_Base):
         guessed_ext = mimetypes.guess_extension(mime, strict=False)
         return "".join((n, guessed_ext if guessed_ext else extpart))
 
+    # CheckSumType/AlgorithmID enumeration in zuse_p2.xsd -> hashlib name
+    CHECKSUM_ALGORITHMS = {"SHA256": "sha256", "SHA512": "sha512"}
+
     def content(self, verify_checksum=True) -> bytes:
         """Download content bytes for attachment, and check hash value (optional)"""
 
         content_bytes = self.connection.download_attachment(self.delivery_id, self.id)
 
         if verify_checksum:
-            hash = hashlib.new(self.hash[0])
-            if hash is None:
-                raise KeyError(f"Could not instantiate hash algorithm {self.hash[0]}")
-            hash.update(content_bytes)
-
-            if hash.digest() != self.hash[1]:
+            algorithm, expected = self.hash
+            hashlib_name = self.CHECKSUM_ALGORITHMS.get(algorithm)
+            if hashlib_name is None:
                 raise ValueError(
-                    f"Downloaded content bytes do not match checksum (expected {self.hash[1].hex()}, got {hash.hexdigest()})"
+                    f"Unsupported checksum algorithm {algorithm!r} for attachment {self.id} "
+                    f"(expected one of {', '.join(self.CHECKSUM_ALGORITHMS)})"
+                )
+            actual = hashlib.new(hashlib_name, content_bytes).digest()
+
+            if not hmac.compare_digest(actual, expected):
+                raise ValueError(
+                    f"Downloaded content bytes do not match checksum "
+                    f"(expected {expected.hex()}, got {actual.hex()})"
                 )
 
         return content_bytes

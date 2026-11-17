@@ -35,7 +35,7 @@ Implemented as planned, with two deviations: the fakes (`tests/fakes.py`) return
 Consider a separate, longer read timeout for large attachments: `timeout=(10, 60)`.
 **Test:** mock `session.get`, then assert that the timeout is passed and that `raise_for_status` propagates.
 
-### 1.2 Checksum cleanup [B3, part of B6]
+### 1.2 Checksum cleanup [B3, part of B6] — done
 
 `mail.py:84–94`:
 - Rename the local `hash` to `hasher`.

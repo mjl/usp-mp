@@ -207,6 +207,18 @@ def test_checksum_mismatch_raises(mailbox, service):
         attachment.content()
 
 
+@pytest.mark.parametrize("algorithm", ["MD5", "sha256", "SHA-256"])
+def test_unsupported_checksum_algorithm_raises(mailbox, service, algorithm):
+    """Only the schema's SHA256/SHA512 are accepted, spelled exactly as in the XSD."""
+    service.add_delivery(attachments=[FakeAttachment(b"payload", algorithm=algorithm, checksum=b"\0" * 32)])
+
+    [delivery] = mailbox.deliveries()
+    [attachment] = delivery.attachments()
+
+    with pytest.raises(ValueError, match=f"Unsupported checksum algorithm '{algorithm}'"):
+        attachment.content()
+
+
 def test_checksum_check_can_be_skipped(mailbox, service):
     service.add_delivery(attachments=[FakeAttachment(b"payload", checksum=b"\0" * 32)])
 

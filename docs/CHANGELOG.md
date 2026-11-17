@@ -30,6 +30,7 @@ Changes since `1.0.20260224` (the version number has not been bumped; commits da
 
 ### Fixed
 
+- Checksum verification: unsupported `AlgorithmID` values now raise a clear `ValueError` naming the algorithm (previously a generic `hashlib` error, behind an unreachable `None` check). Digests are compared with `hmac.compare_digest`.
 - Attachment downloads now go through the session: a timeout applies (previously none), and the `USP_MP/<version>` User-Agent and connection reuse are used.
 - `import usp_mp.mail` raised `NameError` on Python before 3.14 (forward reference to `Delivery` in an annotation); added `from __future__ import annotations`.
 - CLI exit status: `main()`'s return value is now actually used (`raise SystemExit(main())`) instead of being discarded.
