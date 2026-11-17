@@ -137,12 +137,14 @@ Check during implementation: when `session.verify` is a path, requests also pass
 
 **Tests:** after adapter construction no temp files remain (patch `tempfile.mkdtemp` to a known dir); a failure inside `load_cert_chain` still removes the directory.
 
-### 3.2 Build the zeep client once [D1, D2, D3]
+### 3.2 Build the zeep client once [D1, D2, D3] — partly done
+
+**Done (decision (b), 2026-11-17):** `Mailbox` is a mandatory context manager (`with Mailbox(...) as mbox:`) that owns one connection, so the SOAP client is built once per mailbox. `ConnectionContext.service` is a property that is always set and raises when closed, and the asserts are gone. Since the CLI was the only caller, breaking the API was acceptable. **Still open:** the bullets on dropping the separate `read_wsdl_types` parse and making `types` per instance, plus the thread-safety note.
 
 - Move `requests.Session`, `Transport`, `Client` and `create_service` into `USP_MP_Adapter.__init__`, and drop the separate `read_wsdl_types` parse. Resolve the three types from the same client.
 - Make `types` an **instance** attribute: a small frozen dataclass assigned in `__init__`. Remove the class-level `ParamTypes()` instance.
 - `service` is always set, so remove `self.service = None`, `if not conn.service` and every `assert connection.service`.
-- `connection()` stays as a context manager for API compatibility, but now only scopes the session lifetime (closing pooled connections on exit). Alternatively, make `Mailbox` itself a context manager. **Decision needed:** keep `connection()` or move to `with Mailbox(...) as mbox:`. The recommendation is to keep it and add `Mailbox.close()` plus `__enter__`/`__exit__` on top.
+- ~~Keep `connection()`, or make `Mailbox` a context manager?~~ Decided: `Mailbox` as a **mandatory** context manager (option (b)); `connection()` remains as the building block underneath.
 - Document that an adapter is not thread-safe (one per thread).
 
 ### 3.3 N+1 round trips [B5]
@@ -222,7 +224,7 @@ After each PR, update `critique.md` status markers and `CHANGELOG.md`.
 
 1. ~~Keep `deliveries(all=...)`, or rename it to `new_only` with a deprecation (1.3)?~~ Decided: keep it.
 2. ~~Eventually remove the literal `--client-password` value (1.4)?~~ Decided: keep it, with the warning.
-3. Keep `connection()`, or move to `Mailbox` as a context manager (3.2)?
+3. ~~Keep `connection()`, or move to `Mailbox` as a context manager (3.2)?~~ Decided: mandatory `with Mailbox(...) as mbox:`.
 4. ~~Which licence (5.2)?~~ Decided: BSD 3-Clause.
 5. ~~Which versioning scheme (5.4)?~~ Decided: keep `1.0.YYYYMMDD`.
 6. Keep or remove the vendor documents (5.5)?

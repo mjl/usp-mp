@@ -34,6 +34,118 @@ def test_mailbox_defaults_to_demo(fake_adapters, mailbox):
     assert fake_adapters[0].prod is False
 
 
+# --- lifecycle: Mailbox is a context manager --------------------------------------
+
+def make_mailbox():
+    from usp_mp.mail import Mailbox
+
+    return Mailbox("fake.p12", "secret")
+
+
+def test_with_block_opens_and_closes_connection(fake_adapters, service):
+    with make_mailbox() as mbox:
+        assert service.open_connections == 1
+        list(mbox.deliveries())
+    assert service.open_connections == 0
+
+
+def test_one_connection_per_mailbox(fake_adapters, service):
+    service.add_deliveries(2)
+
+    with make_mailbox() as mbox:
+        list(mbox.deliveries(all=True))
+        list(mbox.deliveries(all=False))
+        list(mbox.deliveries())
+
+    assert fake_adapters[0].connections_opened == 1
+
+
+def test_construction_does_not_connect(fake_adapters, service):
+    make_mailbox()
+
+    assert fake_adapters[0].connections_opened == 0
+
+
+def test_deliveries_without_with_fails_immediately(fake_adapters):
+    mbox = make_mailbox()
+
+    with pytest.raises(RuntimeError, match="not open.*with Mailbox"):
+        mbox.deliveries()  # raises on the call, not on first iteration
+
+
+def test_deliveries_after_close_fails(fake_adapters):
+    with make_mailbox() as mbox:
+        pass
+
+    with pytest.raises(RuntimeError, match="Mailbox is closed"):
+        mbox.deliveries()
+    with pytest.raises(RuntimeError, match="Mailbox is closed"):
+        mbox.service
+
+
+def test_mailbox_cannot_be_reopened(fake_adapters):
+    mbox = make_mailbox()
+    with mbox:
+        with pytest.raises(RuntimeError, match="only be opened once"):
+            mbox.__enter__()
+    with pytest.raises(RuntimeError, match="only be opened once"):
+        with mbox:
+            pass
+
+
+def test_close_is_idempotent_and_closes(fake_adapters, service):
+    mbox = make_mailbox().__enter__()
+
+    mbox.close()
+    mbox.close()
+
+    assert service.open_connections == 0
+    with pytest.raises(RuntimeError, match="Mailbox is closed"):
+        mbox.deliveries()
+
+
+def test_closed_before_open_cannot_be_opened(fake_adapters):
+    mbox = make_mailbox()
+    mbox.close()
+
+    with pytest.raises(RuntimeError):
+        with mbox:
+            pass
+
+
+def test_connection_closed_when_block_raises(fake_adapters, service):
+    with pytest.raises(KeyError):
+        with make_mailbox():
+            raise KeyError("boom")
+
+    assert service.open_connections == 0
+
+
+def test_objects_from_closed_mailbox(fake_adapters, service):
+    service.add_delivery("Bescheid")
+
+    with make_mailbox() as mbox:
+        [delivery] = mbox.deliveries()
+        [attachment] = delivery.attachments()
+
+    # already-fetched data stays readable ...
+    assert delivery.subject == "Bescheid"
+    assert attachment.filename == "mailbody"
+    # ... but nothing can reach the service any more
+    for action in (attachment.content, delivery.close, delivery.delete):
+        with pytest.raises(RuntimeError, match="closed"):
+            action()
+
+
+def test_raw_soap_access(fake_adapters, service):
+    fake = service.add_delivery()
+
+    with make_mailbox() as mbox:
+        r = mbox.service.GetDelivery(fake.delivery_id, Version=mbox.uspmp.VERSION)
+
+    assert r.Delivery.DeliveryID == fake.delivery_id
+
+
 # --- querying -----------------------------------------------------------------------
 
 def test_empty_mailbox_yields_nothing(mailbox, service):
@@ -80,12 +192,6 @@ def test_query_error_raises(mailbox, service):
         list(mailbox.deliveries())
 
 
-def test_connection_closed_after_full_iteration(mailbox, service):
-    service.add_deliveries(2)
-
-    for _ in mailbox.deliveries():
-        assert service.open_connections == 1
-    assert service.open_connections == 0
 
 
 @pytest.mark.xfail(strict=True, reason="critique B2: deliveries() stops after the first 100")

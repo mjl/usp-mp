@@ -2,12 +2,21 @@
 
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/). The repository has no release tags; versions are the value of `usp_mp.__version__` at the time, and dates come from the git history.
 
-## [Unreleased]
+## [1.0.20261117] - 2026-11-17
 
-Changes since `1.0.20260224` (the version number has not been bumped; commits date from 2026-04-16 to 2026-11-17).
+Changes since `1.0.20260224` (commits from 2026-04-16 to 2026-11-17).
+
+**Breaking changes** (the version scheme doesn't signal them, so they are listed here):
+
+- `Mailbox` must be used as a context manager: `with Mailbox(...) as mbox:`. `deliveries()` outside the block raises `RuntimeError`.
+- The `uspmp.py` script is replaced by the installed `uspmp` command.
+- `Attachment.sanitized_filename` produces different names.
+- `USP_MP_Adapter` lost `cert_pem`, `key_pem` and `read_cert()`.
+- The CLI exits with status 1 and a one-line message on errors, and 2 on invalid arguments, instead of raising.
 
 ### Added
 
+- `Mailbox` context manager support (`__enter__`/`__exit__`), `Mailbox.close()`, and `Mailbox.service` for raw SOAP calls on the open connection.
 - BSD 3-Clause licence (`LICENSE`, declared in the package metadata).
 - `usp_mp.util` with `sanitize_filename(name, mime)` and `unique_path(directory, filename)`.
 - CLI option `--client-password-file PATH`.
@@ -20,6 +29,7 @@ Changes since `1.0.20260224` (the version number has not been bumped; commits da
 
 ### Changed
 
+- **`Mailbox` must be used as a context manager.** It owns one connection (HTTP session and zeep client) for the whole `with` block instead of opening one per `deliveries()` call, and closes it deterministically, also on exceptions or an early `break`. Outside the block, `deliveries()` and anything that contacts the service (`Attachment.content()`, `Delivery.close()`/`delete()`) raise `RuntimeError`; already-fetched data stays readable. A `Mailbox` can be opened only once. `USP_MP_Adapter.ConnectionContext` gained `closed` and `close()`, and its `service` raises once closed.
 - `Attachment.sanitized_filename` produces different, cleaner names: runs of unsafe characters (including underscores) collapse to one `_`, accents fold to ASCII (`März` → `marz`), the stem is capped at 100 characters, and a matching original extension is kept (`scan.jpeg` stays `.jpeg`). Code that relies on the old names, such as previously saved files, sees new names.
 - CLI: `--client-certificate` is required and must exist; invalid arguments (missing `ENV:` variable, bad `--download` directory) are usage errors with exit status 2. Runtime errors print a single `uspmp: error: …` line and exit with status 1 instead of a traceback (`--debug` shows it). A non-empty literal `--client-password` prints a warning.
 - Clearer password prompt in the CLI (names the certificate file).

@@ -29,7 +29,8 @@ pytestmark = [
 
 @pytest.fixture(scope="module")
 def demo_mailbox():
-    return Mailbox(P12, P12_PASS, prod=False)
+    with Mailbox(P12, P12_PASS, prod=False) as mbox:
+        yield mbox
 
 
 @pytest.fixture(scope="module")

@@ -38,6 +38,7 @@ def test_lists_deliveries(capsys, cert, fake_adapters, service):
     assert "Bescheid 2026" in out
     assert "Mail body 1" in out  # short text/plain body is printed
     assert service.calls_to("CloseDelivery") == []  # nothing marked read without --save
+    assert service.open_connections == 0
 
 
 def test_save_writes_attachments_and_marks_read(tmp_path, cert, fake_adapters, service):
@@ -165,6 +166,7 @@ def test_runtime_error_is_one_line_and_exit_1(capsys, cert, fake_adapters, servi
     err = capsys.readouterr().err
     assert err.startswith("uspmp: error: ") and "Mailbox locked" in err
     assert "Traceback" not in err
+    assert service.open_connections == 0
 
 
 def test_debug_shows_full_exception(cert, fake_adapters, service, monkeypatch):

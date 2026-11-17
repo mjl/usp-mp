@@ -22,34 +22,76 @@ class USP_MP_Base:
 
 
 class Mailbox(USP_MP_Base):
+    """A Mein Postkorb mailbox. Must be used as a context manager:
+
+        with Mailbox(p12_path, p12_pass) as mbox:
+            for delivery in mbox.deliveries():
+                ...
+
+    Constructing it only loads the client certificate; entering it opens the
+    connection, leaving it closes the connection. Deliveries and attachments
+    obtained inside the block can't contact the service after it ends.
+    A Mailbox can be opened only once.
+    """
 
     def __init__(self, p12_path: str, p12_pass: str, prod: bool = False) -> None:
         try:
             self.uspmp = USP_MP_Adapter(p12_path, p12_pass, prod=prod)
         except Exception as e:
             raise RuntimeError(f"Failed to initialize USP_MP_Adapter: {e}")
+        self._connection: USP_MP_Adapter.ConnectionContext | None = None
+        self._used = False
+
+    def __enter__(self) -> Mailbox:
+        if self._used:
+            raise RuntimeError("A Mailbox can only be opened once; create a new one")
+        self._used = True
+        self._connection = self.uspmp.connection().__enter__()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
+        self.close()
+
+    def close(self) -> None:
+        """Close the connection. Safe to call more than once."""
+        self._used = True
+        if self._connection is not None:
+            self._connection.close()
+
+    @property
+    def connection(self) -> USP_MP_Adapter.ConnectionContext:
+        if self._connection is None:
+            if self._used:
+                raise RuntimeError("Mailbox is closed")
+            raise RuntimeError("Mailbox is not open; use it as 'with Mailbox(...) as mbox:'")
+        if self._connection.closed:
+            raise RuntimeError("Mailbox is closed")
+        return self._connection
+
+    @property
+    def service(self):
+        """The zeep service proxy, for calling SOAP operations directly."""
+        return self.connection.service
 
     def deliveries(self, all: bool = True) -> Iterator[Delivery]:
-        with self.uspmp.connection() as conn:
-            if not conn.service:
-                raise RuntimeError("Failed to establish connection")
+        # Not a generator itself, so that using a closed/unopened mailbox fails right here
+        return self._deliveries(self.connection, all)
 
-            service = conn.service
+    def _deliveries(self, conn: USP_MP_Adapter.ConnectionContext, all: bool) -> Iterator[Delivery]:
+        if all:
+            deliveries_selector = self.uspmp.types.AllDeliveriesType(
+                Paging=self.uspmp.types.PagingType(Start=0, Limit=100)  # pyright: ignore[reportCallIssue]
+            )
+        else:
+            deliveries_selector = self.uspmp.types.NewDeliveriesOnlyType(Limit=100)  # pyright: ignore[reportCallIssue]
 
-            if all:
-                deliveries_selector = self.uspmp.types.AllDeliveriesType(
-                    Paging=self.uspmp.types.PagingType(Start=0, Limit=100)  # pyright: ignore[reportCallIssue]
-                )
-            else:
-                deliveries_selector = self.uspmp.types.NewDeliveriesOnlyType(Limit=100)  # pyright: ignore[reportCallIssue]
+        r = conn.service.QueryDeliveries(deliveries_selector, Version=self.uspmp.VERSION)
+        self.raise_on_error(r, 'query deliveries')
+        if r.ResultsList.HitCount == 0:
+            return
 
-            r = service.QueryDeliveries(deliveries_selector, Version=self.uspmp.VERSION)
-            self.raise_on_error(r, 'query deliveries')
-            if r.ResultsList.HitCount == 0:
-                return
-
-            for delivery_id in r.ResultsList.DeliveryID:
-                yield Delivery(conn, delivery_id)
+        for delivery_id in r.ResultsList.DeliveryID:
+            yield Delivery(conn, delivery_id)
 
 
 class Attachment(USP_MP_Base):
@@ -118,7 +160,6 @@ class Delivery(USP_MP_Base):
     def __init__(self, connection: USP_MP_Adapter.ConnectionContext, id: str) -> None:
         self.id = id
         self.connection = connection
-        assert connection.service
         self.delivery = connection.service.GetDelivery(
             id, Version=connection.uspmp.VERSION
         )
@@ -145,7 +186,6 @@ class Delivery(USP_MP_Base):
             yield Attachment(self.connection, delivery.DeliveryID, att)
 
     def close(self, delete=False):
-        assert self.connection.service
         r = self.connection.service.CloseDelivery(
             self.id, Version=self.connection.uspmp.VERSION
         )
@@ -155,7 +195,6 @@ class Delivery(USP_MP_Base):
             self.delete()
 
     def delete(self):
-        assert self.connection.service
         r = self.connection.service.DeleteDelivery(
             self.id, Version=self.connection.uspmp.VERSION
         )

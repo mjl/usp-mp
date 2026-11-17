@@ -108,34 +108,36 @@ def main(argv: list[str] | None = None) -> int:
 
 
 def process(args: argparse.Namespace, dest: Path, p12_pass: str) -> None:
-    save_path = Path()
+    with Mailbox(args.client_certificate, p12_pass, prod=args.prod) as mbox:
+        for post_idx, delivery in enumerate(mbox.deliveries(all=args.all)):
+            process_delivery(args, dest, post_idx, delivery)
 
-    mbox = Mailbox(args.client_certificate, p12_pass, prod=args.prod)
-    for post_idx, delivery in enumerate(mbox.deliveries(all=args.all)):
-        print(f"[{post_idx:02}] {delivery.delivery_ts} {delivery}")
 
+def process_delivery(args: argparse.Namespace, dest: Path, post_idx: int, delivery) -> None:
+    print(f"[{post_idx:02}] {delivery.delivery_ts} {delivery}")
+
+    save_path = dest / str(post_idx)
+    if args.save:
+        save_path.mkdir(exist_ok=False)
+
+    for att_idx, attachment in enumerate(delivery.attachments()):
+        print(f"   [{att_idx:02}] {attachment} {attachment.mimetype}")
+        b = attachment.content(verify_checksum=True)
+        if att_idx == 0 and attachment.mimetype == 'text/plain' and len(b) < 1000:
+            print("     -----")
+            for line in b.split(b'\n'):
+                print(" "*4, line.decode(errors='replace'))
+            print("     -----")
         if args.save:
-            save_path = dest / str(post_idx)
-            save_path.mkdir(exist_ok=False)
+            fname = save_path / f"{att_idx}_{attachment.sanitized_filename}"
+            with open(fname, 'wb') as f:
+                f.write(b)
+            print("        Saved as", fname)
 
-        for att_idx, attachment in enumerate(delivery.attachments()):
-            print(f"   [{att_idx:02}] {attachment} {attachment.mimetype}")
-            b = attachment.content(verify_checksum=True)
-            if att_idx == 0 and attachment.mimetype == 'text/plain' and len(b) < 1000:
-                print("     -----")
-                for line in b.split(b'\n'):
-                    print(" "*4, line.decode(errors='replace'))
-                print("     -----")
-            if args.save:
-                fname = save_path / f"{att_idx}_{attachment.sanitized_filename}"
-                with open(fname, 'wb') as f:
-                    f.write(b)
-                print("        Saved as", fname)
+    if args.save:  # Only mark as read if saved
+        delivery.close()
 
-        if args.save:  # Only mark as read if saved
-            delivery.close()
-
-        print("\n=================================")
+    print("\n=================================")
 
 
 if __name__ == "__main__":

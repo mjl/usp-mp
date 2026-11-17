@@ -194,21 +194,38 @@ class FakeService:
 
 
 class FakeConnection:
-    """Stands in for ``USP_MP_Adapter.ConnectionContext``."""
+    """Stands in for ``USP_MP_Adapter.ConnectionContext``, including its closed state."""
 
     def __init__(self, adapter: FakeAdapter) -> None:
         self.uspmp = adapter
-        self.service = adapter.service
+        self._service = adapter.service
+        self.closed = False
+
+    def _ensure_open(self) -> None:
+        if self.closed:
+            raise RuntimeError("Mailbox connection is closed")
+
+    @property
+    def service(self) -> FakeService:
+        self._ensure_open()
+        return self._service
 
     def __enter__(self):
-        self.service.open_connections += 1
+        self._ensure_open()
+        self._service.open_connections += 1
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        self.service.open_connections -= 1
+        self.close()
+
+    def close(self) -> None:
+        if not self.closed:
+            self.closed = True
+            self._service.open_connections -= 1
 
     def download_attachment(self, delivery_id: str, attachment_id: str) -> bytes:
-        return self.service.download_attachment(delivery_id, attachment_id)
+        self._ensure_open()
+        return self._service.download_attachment(delivery_id, attachment_id)
 
 
 class FakeAdapter:
@@ -221,6 +238,7 @@ class FakeAdapter:
         self.p12_path = p12_path
         self.p12_pass = p12_pass
         self.prod = prod
+        self.connections_opened = 0
         # Real zeep types, so selectors are built exactly as against the real service
         self.types = SimpleNamespace(**{
             name: wsdl_client.get_type(f"ns0:{name}")
@@ -228,4 +246,5 @@ class FakeAdapter:
         })
 
     def connection(self) -> FakeConnection:
+        self.connections_opened += 1
         return FakeConnection(self)

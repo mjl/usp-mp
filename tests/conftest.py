@@ -37,7 +37,8 @@ def fake_adapters(service, wsdl_client, monkeypatch):
 
 @pytest.fixture
 def mailbox(fake_adapters):
-    """A ``Mailbox`` wired to the fake service: no certificate, no network."""
+    """An open ``Mailbox`` wired to the fake service: no certificate, no network."""
     from usp_mp.mail import Mailbox
 
-    return Mailbox("fake.p12", "secret")
+    with Mailbox("fake.p12", "secret") as mbox:
+        yield mbox

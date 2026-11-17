@@ -226,6 +226,42 @@ def test_soap_call_presents_client_certificate(adapter, start_server):
     assert data["user_agent"].startswith("USP_MP/")
 
 
+def test_connection_unusable_after_close(adapter, start_server):
+    port = start_server()
+    adapter.attachment_endpoint = f"https://localhost:{port}/attachment"
+
+    with adapter.connection() as conn:
+        conn.download_attachment("d", "a")
+
+    assert conn.closed
+    with pytest.raises(RuntimeError, match="closed"):
+        conn.service
+    with pytest.raises(RuntimeError, match="closed"):
+        conn.download_attachment("d", "a")
+    with pytest.raises(RuntimeError, match="closed"):
+        conn.__enter__()
+    conn.close()  # idempotent
+
+
+def test_mailbox_end_to_end_over_mutual_tls(pki, monkeypatch, start_server):
+    """Real Mailbox + adapter (no fakes): the SOAP call carries the client certificate."""
+    from zeep.exceptions import Fault
+
+    from usp_mp.mail import Mailbox
+
+    monkeypatch.setattr(USP_MP_Adapter, "CA_PATH", pki["ca"])
+    port = start_server()
+    mbox = Mailbox(pki["p12"], P12_PASSWORD)
+    mbox.uspmp.soap_endpoint = f"https://localhost:{port}/soap"
+
+    with mbox, pytest.raises(Fault) as excinfo:
+        list(mbox.deliveries())
+
+    assert json.loads(excinfo.value.message)["client_cn"] == "test-client"
+    with pytest.raises(RuntimeError, match="closed"):
+        mbox.deliveries()
+
+
 def test_private_key_only_written_encrypted_and_removed(pki, monkeypatch, record_key_loading):
     monkeypatch.setattr(USP_MP_Adapter, "CA_PATH", pki["ca"])
     USP_MP_Adapter(pki["p12"], P12_PASSWORD)

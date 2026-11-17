@@ -50,20 +50,23 @@ from usp_mp.mail import Mailbox
 p12_path = "/path/to/certificate.p12"
 p12_pass = "secret"
 
-mbox = Mailbox(p12_path, p12_pass, prod=False)
-
-for delivery in mbox.deliveries(all=False):
-    print(delivery.delivery_ts, delivery.subject)
-    for attachment in delivery.attachments():
-        data = attachment.content(verify_checksum=True)
-        # process data
+with Mailbox(p12_path, p12_pass, prod=False) as mbox:
+    for delivery in mbox.deliveries(all=False):
+        print(delivery.delivery_ts, delivery.subject)
+        for attachment in delivery.attachments():
+            data = attachment.content(verify_checksum=True)
+            # process data
 ```
 
 ## Library API
 
 ### Mailbox
 
-`Mailbox(p12_path, p12_pass, prod=False)` opens a client bound to the demo or production endpoint.
+`Mailbox(p12_path, p12_pass, prod=False)` loads the client certificate for the demo or production endpoint. It must be used as a context manager: `with Mailbox(...) as mbox:` opens one connection (HTTP session and SOAP client) that all calls inside the block share, and closes it when the block ends, even on an exception.
+
+- Calling `deliveries()` outside a `with` block, or after it ended, raises `RuntimeError`.
+- After the block, `Delivery` and `Attachment` objects keep their already-fetched data (subject, file names, …), but anything that contacts the service (`content()`, `close()`, `delete()`) raises `RuntimeError`.
+- A `Mailbox` can be opened only once; create a new one for another session. `mbox.close()` closes it early and is safe to call more than once.
 
 `Mailbox.deliveries()` yields `Delivery` objects.
 
@@ -84,9 +87,10 @@ Methods:
 Example:
 
 ```python
-for delivery in mbox.deliveries(all=False):
-    delivery.close()
-    delivery.delete()
+with Mailbox(p12_path, p12_pass) as mbox:
+    for delivery in mbox.deliveries(all=False):
+        delivery.close()
+        delivery.delete()
 ```
 
 ### Attachment
@@ -105,12 +109,13 @@ from usp_mp.util import unique_path
 out_dir = Path("/var/tmp/uspmp")
 out_dir.mkdir(parents=True, exist_ok=True)
 
-for delivery in mbox.deliveries(all=False):
-    delivery_dir = out_dir / delivery.id
-    delivery_dir.mkdir(exist_ok=True)
-    for attachment in delivery.attachments():
-        data = attachment.content(verify_checksum=True)
-        unique_path(delivery_dir, attachment.sanitized_filename).write_bytes(data)
+with Mailbox(p12_path, p12_pass) as mbox:
+    for delivery in mbox.deliveries(all=False):
+        delivery_dir = out_dir / delivery.id
+        delivery_dir.mkdir(exist_ok=True)
+        for attachment in delivery.attachments():
+            data = attachment.content(verify_checksum=True)
+            unique_path(delivery_dir, attachment.sanitized_filename).write_bytes(data)
 ```
 
 `sanitized_filename` lower-cases the name, folds accents to ASCII (`März` → `marz`), replaces every run of other characters with a single `_`, and picks the extension from the MIME type unless the original one already matches. Two attachments can still end up with the same name; `unique_path` appends `_1`, `_2`, … instead of overwriting. Both helpers, `sanitize_filename(name, mime)` and `unique_path(directory, filename)`, are in `usp_mp.util`.
@@ -119,16 +124,15 @@ for delivery in mbox.deliveries(all=False):
 
 ### Working with raw SOAP methods
 
-The adapter exposes the raw zeep client and SOAP service if you need to call other operations.
+An open mailbox exposes the zeep service proxy if you need to call SOAP operations directly.
 
 ```python
-from usp_mp.adapter import USP_MP_Adapter
-
-uspmp = USP_MP_Adapter(p12_path, p12_pass, prod=True)
-with uspmp.connection() as conn:
+with Mailbox(p12_path, p12_pass, prod=True) as mbox:
     # Call any SOAP operation directly
-    conn.service.GetDelivery(delivery_id, Version=uspmp.VERSION)
+    mbox.service.GetDelivery(delivery_id, Version=mbox.uspmp.VERSION)
 ```
+
+Underneath, `Mailbox` uses `USP_MP_Adapter.connection()`, a context manager for one HTTP session and zeep client; it can also be used on its own.
 
 ### Attachment-only download (REST)
 

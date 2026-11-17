@@ -130,9 +130,11 @@ class USP_MP_Adapter:
         return ctx
 
     class ConnectionContext:
+        """One HTTP session and zeep client. Usable until it is exited/closed."""
+
         def __init__(self, uspmp):
-            self.service = None
             self.uspmp = uspmp
+            self.closed = False
             self.session = requests.Session()
             # The mounted context does the actual verification; keeping `verify`
             # pinned to the BRZ CA ensures nothing falls back to the system store.
@@ -152,15 +154,32 @@ class USP_MP_Adapter:
 
             # we already checked that client bindings contains services
             binding = list(self.client.wsdl.bindings.keys())[0]
-            self.service = self.client.create_service(binding, uspmp.soap_endpoint)
+            self._service = self.client.create_service(binding, uspmp.soap_endpoint)
+
+        def _ensure_open(self) -> None:
+            if self.closed:
+                raise RuntimeError("Mailbox connection is closed")
+
+        @property
+        def service(self):
+            """The zeep service proxy for SOAP calls."""
+            self._ensure_open()
+            return self._service
 
         def __enter__(self):
+            self._ensure_open()
             return self
 
         def __exit__(self, exc_type, exc_val, exc_tb):
-            self.session.close()
+            self.close()
+
+        def close(self) -> None:
+            if not self.closed:
+                self.closed = True
+                self.session.close()
 
         def download_attachment(self, delivery_id: str, attachment_id: str) -> bytes:
+            self._ensure_open()
             # Must go through the session: the client certificate lives in its SSLContext
             r = self.session.get(self.uspmp.attachment_endpoint,
                 params={'delivery_id': delivery_id, 'attachment_id': attachment_id},
@@ -170,5 +189,5 @@ class USP_MP_Adapter:
             return r.content
 
     def connection(self):
-        """Use as context handler"""
+        """Open a new connection; use as a context manager. Mailbox does this for you."""
         return self.ConnectionContext(self)
