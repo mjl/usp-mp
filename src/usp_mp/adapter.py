@@ -1,4 +1,6 @@
 
+import datetime
+import logging
 import os
 import secrets
 from dataclasses import dataclass
@@ -18,6 +20,11 @@ from cryptography.hazmat.backends import default_backend
 from zeep import Client, Settings
 
 from .errors import CertificateError, MailboxStateError
+
+logger = logging.getLogger(__name__)
+
+# Warn this long before the client certificate expires
+CERTIFICATE_EXPIRY_WARNING = datetime.timedelta(days=30)
 from zeep.transports import Transport
 from zeep.wsdl import Document
 
@@ -81,7 +88,10 @@ class USP_MP_Adapter:
         from . import __version__
         self.headers = {'User-Agent': f'USP_MP/{__version__}'}
 
+        logger.debug("Using %s endpoint %s", "production" if prod else "demo", self.endpoint)
+
         private_key, cert = self.load_p12_cert(p12_path, p12_pass)
+        self.certificate_expires = self.check_expiry(cert)
         self.ssl_context = self.build_ssl_context(private_key, cert)
         del private_key  # only the SSLContext keeps the key from here on
 
@@ -132,6 +142,22 @@ class USP_MP_Adapter:
         if private_key is None or certificate is None:
             raise CertificateError(f"Client certificate {p12_path} contains no private key and certificate")
         return private_key, certificate
+
+    @staticmethod
+    def check_expiry(certificate) -> datetime.datetime:
+        """Log when the client certificate expires; warn shortly before (or after) it does."""
+        expires = getattr(certificate, "not_valid_after_utc", None)  # cryptography >= 42
+        if expires is None:
+            expires = certificate.not_valid_after.replace(tzinfo=datetime.timezone.utc)
+        remaining = expires - datetime.datetime.now(datetime.timezone.utc)
+        if remaining <= datetime.timedelta(0):
+            logger.warning("Client certificate expired on %s; the service will reject it", expires.date())
+        elif remaining <= CERTIFICATE_EXPIRY_WARNING:
+            logger.warning("Client certificate expires on %s (in %d days); create a new one in USP",
+                           expires.date(), remaining.days)
+        else:
+            logger.debug("Client certificate valid until %s", expires.date())
+        return expires
 
     def build_ssl_context(self, private_key, certificate) -> ssl.SSLContext:
         """Build a client SSLContext carrying the client certificate and the BRZ CA.
@@ -185,6 +211,7 @@ class USP_MP_Adapter:
             self.client = Client(wsdl=uspmp.wsdl, transport=transport, settings=uspmp.settings)
             binding = next(iter(self.client.wsdl.bindings))  # load_wsdl checked there is one
             self._service = self.client.create_service(binding, uspmp.soap_endpoint)
+            logger.debug("Opened connection to %s", uspmp.endpoint)
 
         def _ensure_open(self) -> None:
             if self.closed:
@@ -207,6 +234,7 @@ class USP_MP_Adapter:
             if not self.closed:
                 self.closed = True
                 self.session.close()
+                logger.debug("Closed connection to %s", self.uspmp.endpoint)
 
         def download_attachment(self, delivery_id: str, attachment_id: str) -> bytes:
             self._ensure_open()
@@ -216,6 +244,7 @@ class USP_MP_Adapter:
                 timeout=self.uspmp.TIMEOUT,
             )
             r.raise_for_status()
+            logger.debug("Downloaded attachment %s of delivery %s: %d bytes", attachment_id, delivery_id, len(r.content))
             return r.content
 
     def connection(self):

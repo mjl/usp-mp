@@ -423,6 +423,29 @@ def test_unknown_response_elements_are_logged(mailbox, service, monkeypatch, cap
     assert "FutureElement" in caplog.text
 
 
+# --- logging ------------------------------------------------------------------------
+
+def test_queries_and_fetches_are_logged_at_debug(mailbox, service, caplog):
+    fake = service.add_delivery()
+
+    with caplog.at_level("DEBUG", logger="usp_mp"):
+        list(mailbox.deliveries(all=True))
+
+    assert "QueryDeliveries AllDeliveriesType Start=0 Limit=1000: HitCount 1, 1 IDs returned" in caplog.text
+    assert f"Fetched delivery {fake.delivery_id}" in caplog.text
+
+
+def test_close_and_delete_are_logged_at_info(mailbox, service, caplog):
+    fake = service.add_delivery()
+
+    with caplog.at_level("INFO", logger="usp_mp"):
+        for delivery in mailbox.deliveries():
+            delivery.close(delete=True)
+
+    assert f"Closed (marked as read) delivery {fake.delivery_id}" in caplog.text
+    assert f"Deleted delivery {fake.delivery_id}" in caplog.text
+
+
 # --- typed accessors: sender, receiver, metadata -------------------------------------
 
 def test_sender_and_receiver_corporate_bodies(mailbox, service):

@@ -171,7 +171,15 @@ class Mailbox:
     def _query(self, conn: USP_MP_Adapter.ConnectionContext, selector) -> tuple[int, list[str]]:
         r = conn.service.QueryDeliveries(selector, Version=self.uspmp.VERSION)
         raise_on_error(r, "QueryDeliveries")
-        return r.ResultsList.HitCount, list(r.ResultsList.DeliveryID or [])
+        hit_count, ids = r.ResultsList.HitCount, list(r.ResultsList.DeliveryID or [])
+        paging = getattr(selector, "Paging", None)
+        logger.debug(
+            "QueryDeliveries %s%s: HitCount %d, %d IDs returned",
+            selector._xsd_type.name,
+            f" Start={paging.Start} Limit={paging.Limit}" if paging is not None else f" Limit={selector.Limit}",
+            hit_count, len(ids),
+        )
+        return hit_count, ids
 
     def _all_ids(self, conn: USP_MP_Adapter.ConnectionContext, limit: int | None) -> list[str]:
         types = self.uspmp.types
@@ -285,6 +293,7 @@ class Delivery:
             id, Version=connection.uspmp.VERSION
         )
         raise_on_error(self.delivery, "GetDelivery")
+        logger.debug("Fetched delivery %s", id)
         if unparsed := unparsed_elements(self.delivery):
             logger.warning(
                 "GetDelivery response for %s contains elements the bundled schema doesn't "
@@ -360,6 +369,7 @@ class Delivery:
             self.id, Version=self.connection.uspmp.VERSION
         )
         raise_on_error(r, "CloseDelivery")
+        logger.info("Closed (marked as read) delivery %s", self.id)
 
         if delete:
             self.delete()
@@ -369,3 +379,4 @@ class Delivery:
             self.id, Version=self.connection.uspmp.VERSION
         )
         raise_on_error(r, "DeleteDelivery")
+        logger.info("Deleted delivery %s", self.id)

@@ -186,7 +186,9 @@ Confirmed on the demo service (see above): sender and receiver organisation data
 2. Run the demo integration test with `strict=True`. If it passes, switch to strict mode.
 3. If zeep still fails, keep `strict=False` but replace the "I don't really care…" comment with the precise reason and a link to this plan, and add a test asserting the fields we rely on (`DeliveryID`, `MetaData.Subject`, `AttachmentList`, `CheckSum`) are present, so a silently mis-parsed response fails loudly.
 
-### 4.3 Library logging [P5]
+### 4.3 Library logging [P5] — done
+
+As planned, plus a WARNING for a client certificate expiring within 30 days (or expired) and `adapter.certificate_expires`. The CLI's `--debug` setup no longer uses `dictConfig`, which disabled existing loggers. Completes Phase 4.
 
 - Add `logger = logging.getLogger(__name__)` in `adapter.py` and `mail.py`. Log at DEBUG: endpoint selection, query parameters and `HitCount`, page fetches, and attachment downloads (ID and size). Log at WARNING: truncated new-only results (2.3). **Never** log passwords, PEM data or attachment content.
 - `cli.py --debug` configures both the `usp_mp` and the `zeep.transports` loggers.

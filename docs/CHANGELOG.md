@@ -6,6 +6,7 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/). The repo
 
 ### Added
 
+- Logging under `usp_mp` (DEBUG: endpoint, connections, queries, fetches, downloads; INFO: close/delete; WARNING: truncated new-only results, unparsed response elements, a client certificate expiring within 30 days or expired). `USP_MP_Adapter.certificate_expires`.
 - Typed accessors: `Delivery.sender` and `Delivery.receiver` (a `Contact`: organisation or natural person, with identification), `Delivery.gz`, `delivery_quality`, `app_delivery_id`, `zs_delivery_id`, `delivery_service`, `origin` and `raw`; `Attachment.size`, `document_class` and `raw`.
 - `usp_mp.mail.unparsed_elements(value)` lists XML elements zeep couldn't map to the schema; `Delivery` logs a warning on `usp_mp.mail` when a response contains any.
 - `usp_mp.util.write_atomic(path, data)`.
@@ -15,6 +16,7 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/). The repo
 
 ### Changed
 
+- CLI: library warnings are shown as `uspmp: warning: …`; `--debug` adds the library's debug output to the SOAP traces.
 - The `uspmp` listing shows each delivery's sender (`… from Bundeskanzleramt`).
 - `USP_MP_Adapter` parses the WSDL once per adapter (`load_wsdl()`, replacing `read_wsdl_types()`) and its connections reuse it. `adapter.types` is now a per-adapter frozen `QueryTypes` instead of a class-level object shared by all adapters. The `strict=False` workaround is documented with its cause and side effect.
 - **`uspmp --save` layout:** each delivery is saved into a directory named by its delivery ID instead of its position in the listing (`0/`, `1/`, …). Files are written atomically via a `.part` file.

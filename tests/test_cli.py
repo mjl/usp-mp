@@ -172,7 +172,7 @@ def test_runtime_error_is_one_line_and_exit_1(capsys, cert, fake_adapters, servi
 
 
 def test_debug_shows_full_exception(cert, fake_adapters, service, monkeypatch):
-    monkeypatch.setattr(cli, "setup_logging", lambda: None)  # keep global logging config untouched
+    monkeypatch.setattr(cli, "setup_logging", lambda **kwargs: None)
     service.fail_next("QueryDeliveries", "123", "Mailbox locked")
 
     with pytest.raises(ApiError, match="Mailbox locked"):
@@ -232,3 +232,42 @@ def test_save_directories_are_per_delivery_id(tmp_path, cert, fake_adapters, ser
     assert sorted(p.name for p in out_dir.iterdir()) == sorted([first.delivery_id, second.delivery_id])
     assert (out_dir / second.delivery_id / "0_mailbody.txt").read_bytes() == b"Mail body 2\n"
     assert (out_dir / first.delivery_id / "0_mailbody.txt").read_bytes() == b"Mail body 1\n"
+
+
+# --- logging ------------------------------------------------------------------------
+
+def test_library_warnings_are_shown(capsys, cert, fake_adapters, service, monkeypatch):
+    from usp_mp import mail
+
+    monkeypatch.setattr(mail, "PAGE_SIZE", 2)
+    service.add_deliveries(3)
+
+    assert run_cli("--client-certificate", cert, "--client-password", "") == 0
+
+    err = capsys.readouterr().err
+    assert "uspmp: warning: 3 new deliveries, but only 2 returned" in err
+    assert "debug" not in err.lower()
+
+
+def test_debug_shows_library_debug_output(capsys, cert, fake_adapters, service):
+    import logging
+
+    service.add_delivery()
+
+    assert run_cli("--client-certificate", cert, "--client-password", "", "--debug") == 0
+
+    err = capsys.readouterr().err
+    assert "usp_mp.mail: DEBUG: QueryDeliveries NewDeliveriesOnlyType Limit=1000: HitCount 1, 1 IDs returned" in err
+    assert "usp_mp.mail: DEBUG: Fetched delivery" in err
+    assert not logging.getLogger("usp_mp.mail").disabled  # the old dictConfig setup disabled it
+
+
+def test_setup_logging_is_idempotent():
+    import logging
+
+    cli.setup_logging()
+    cli.setup_logging(debug=True)
+
+    assert len(logging.getLogger("usp_mp").handlers) == 1
+    assert logging.getLogger("usp_mp").level == logging.DEBUG
+

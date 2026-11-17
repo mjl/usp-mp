@@ -31,7 +31,7 @@ Options:
 - `--all` fetch all (not just new) deliveries
 - `--save` save attachments under `--download` (default: current directory), one directory per delivery named by its delivery ID, files as `<index>_<sanitized name>`; each saved delivery is then marked as read. Files are written atomically (via a `.part` file), and re-running into the same directory refreshes the files instead of failing
 - `--prod` use production endpoint (default: demo)
-- `--debug` trace SOAP calls and show full tracebacks on errors
+- `--debug` show the library's debug log and SOAP traces, and full tracebacks on errors. Without it, library warnings still appear as `uspmp: warning: …`
 
 Password handling:
 
@@ -142,6 +142,22 @@ with Mailbox(p12_path, p12_pass) as mbox:
 ```
 
 `sanitized_filename` lower-cases the name, folds accents to ASCII (`März` → `marz`), replaces every run of other characters with a single `_`, and picks the extension from the MIME type unless the original one already matches. Two attachments can still end up with the same name; `unique_path` appends `_1`, `_2`, … instead of overwriting. Both helpers, `sanitize_filename(name, mime)` and `unique_path(directory, filename)`, are in `usp_mp.util`.
+
+### Logging
+
+The library logs through the standard `logging` module under `usp_mp` (`usp_mp.adapter`, `usp_mp.mail`) and configures no handlers itself:
+
+- **WARNING:** new-only results truncated; a client certificate expiring within 30 days, or already expired; response elements the bundled schema doesn't describe.
+- **INFO:** deliveries closed or deleted.
+- **DEBUG:** endpoint, certificate validity, connections, every query with its paging and `HitCount`, fetched deliveries, and downloads with their size.
+
+Passwords, key material and attachment contents are never logged. `adapter.certificate_expires` holds the certificate's expiry time.
+
+```python
+import logging
+logging.basicConfig(level=logging.WARNING)                 # show warnings
+logging.getLogger("usp_mp").setLevel(logging.DEBUG)         # ... and usp_mp debug output
+```
 
 ### Errors
 

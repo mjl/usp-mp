@@ -92,6 +92,21 @@ def demo_credentials(pytestconfig) -> DemoCredentials:
     return creds
 
 
+@pytest.fixture(autouse=True)
+def _restore_logging():
+    """uspmp's setup_logging() reconfigures the usp_mp and zeep.transports loggers; undo it."""
+    import logging
+
+    saved = {}
+    for name in ("usp_mp", "zeep.transports"):
+        log = logging.getLogger(name)
+        saved[name] = (list(log.handlers), log.level, log.propagate, log.disabled)
+    yield
+    for name, (handlers, level, propagate, disabled) in saved.items():
+        log = logging.getLogger(name)
+        log.handlers, log.level, log.propagate, log.disabled = handlers, level, propagate, disabled
+
+
 # --- fakes --------------------------------------------------------------------------
 
 

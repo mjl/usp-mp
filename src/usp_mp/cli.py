@@ -1,6 +1,6 @@
 import argparse
 import getpass
-import logging.config
+import logging
 import os
 import sys
 from pathlib import Path
@@ -9,29 +9,33 @@ from usp_mp.errors import UspMpError
 from usp_mp.mail import Mailbox
 from usp_mp.util import write_atomic
 
-def setup_logging():
-    logging.config.dictConfig({
-        'version': 1,
-        'formatters': {
-            'verbose': {
-                'format': '%(name)s: %(message)s'
-            }
-        },
-        'handlers': {
-            'console': {
-                'level': 'DEBUG',
-                'class': 'logging.StreamHandler',
-                'formatter': 'verbose',
-            },
-        },
-        'loggers': {
-            'zeep.transports': {
-                'level': 'DEBUG',
-                'propagate': True,
-                'handlers': ['console'],
-            },
-        }
-    })
+class _CliFormatter(logging.Formatter):
+    """'uspmp: warning: ...', matching the CLI's own 'uspmp: error: ...' lines."""
+
+    def format(self, record: logging.LogRecord) -> str:
+        return f"uspmp: {record.levelname.lower()}: {record.getMessage()}"
+
+
+def setup_logging(debug: bool = False) -> None:
+    """Show usp_mp warnings on stderr; with debug, also debug output and SOAP traces.
+
+    Configures only the usp_mp and zeep.transports loggers, without touching
+    other loggers (logging.config.dictConfig would disable already-created
+    loggers such as usp_mp.mail by default).
+    """
+    handler = logging.StreamHandler(sys.stderr)
+    handler.setFormatter(logging.Formatter("%(name)s: %(levelname)s: %(message)s") if debug else _CliFormatter())
+    handler._uspmp = True  # type: ignore[attr-defined]  # marks handlers we own, so re-running replaces them
+
+    targets = {"usp_mp": logging.DEBUG if debug else logging.WARNING}
+    if debug:
+        targets["zeep.transports"] = logging.DEBUG
+    for name, level in targets.items():
+        log = logging.getLogger(name)
+        log.handlers = [h for h in log.handlers if not getattr(h, "_uspmp", False)]
+        log.addHandler(handler)
+        log.setLevel(level)
+        log.propagate = False
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -93,8 +97,7 @@ def main(argv: list[str] | None = None) -> int:
 
     p12_pass = read_password(parser, args)
 
-    if args.debug:
-        setup_logging()
+    setup_logging(debug=args.debug)
 
     try:
         process(args, dest, p12_pass)

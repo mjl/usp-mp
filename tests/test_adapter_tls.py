@@ -350,6 +350,47 @@ def test_hostname_mismatch_is_rejected(adapter, start_server):
         conn.download_attachment("d", "a")
 
 
+def test_debug_logs_contain_no_secrets(pki, monkeypatch, caplog, start_server):
+    monkeypatch.setattr(USP_MP_Adapter, "CA_PATH", pki["ca"])
+    port = start_server()
+
+    with caplog.at_level("DEBUG"):
+        adapter = USP_MP_Adapter(pki["p12"], P12_PASSWORD)
+        adapter.attachment_endpoint = f"https://localhost:{port}/attachment"
+        with adapter.connection() as conn:
+            content = conn.download_attachment("d-1", "a-2")
+
+    assert "Using demo endpoint" in caplog.text
+    assert "Downloaded attachment a-2 of delivery d-1" in caplog.text
+    assert P12_PASSWORD not in caplog.text
+    assert "PRIVATE KEY" not in caplog.text and "BEGIN" not in caplog.text
+    assert content.decode() not in caplog.text  # attachment contents are never logged
+
+
+@pytest.mark.parametrize(("days_left", "level", "message"), [
+    (400, "DEBUG", "Client certificate valid until"),
+    (10, "WARNING", "expires on"),
+    (-1, "WARNING", "expired on"),
+])
+def test_certificate_expiry_check(days_left, level, message, caplog):
+    import datetime
+    from types import SimpleNamespace
+
+    expires = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(days=days_left)
+    with caplog.at_level("DEBUG", logger="usp_mp.adapter"):
+        result = USP_MP_Adapter.check_expiry(SimpleNamespace(not_valid_after_utc=expires))
+
+    assert result == expires
+    [record] = [r for r in caplog.records if r.name == "usp_mp.adapter"]
+    assert (record.levelname, message in record.getMessage()) == (level, True)
+
+
+def test_adapter_records_certificate_expiry(adapter):
+    import datetime
+
+    assert adapter.certificate_expires > datetime.datetime.now(datetime.timezone.utc)
+
+
 def test_wrong_p12_password_fails(pki, monkeypatch):
     monkeypatch.setattr(USP_MP_Adapter, "CA_PATH", pki["ca"])
     with pytest.raises(CertificateError, match="wrong password or not a PKCS#12 file"):
