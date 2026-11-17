@@ -174,6 +174,7 @@ The response `Content-Type` is the attachment MIME type.
 
 ### Notes
 
-- The BRZ CA certificate and WSDL are shipped under `src/usp_mp/certs/` and `src/usp_mp/wsdl/`.
+- The BRZ CA certificate and WSDL are shipped under `src/usp_mp/certs/` and `src/usp_mp/wsdl/`. The schema has one local patch so zeep can parse sender and receiver (see `src/usp_mp/wsdl/PATCHES.md`); re-apply it when replacing the vendor files.
+- If the service sends XML elements the bundled schema doesn't describe, they aren't parsed, and a warning naming them is logged on `usp_mp.mail`. Retrieval continues.
 - Demo mode returns fixed sample data and ignores close/delete effects.
 - TLS uses your .p12 client cert and the BRZ CA certificate; no extra trust store setup is required when using the library.

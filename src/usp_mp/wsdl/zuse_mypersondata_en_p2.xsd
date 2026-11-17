@@ -113,7 +113,11 @@
 		</xs:annotation>
 		<xs:sequence>
 			<xs:element ref="p:Identification"/>
-			<xs:element ref="p:Person"/>
+			<!-- usp-mp patch, see PATCHES.md: was <xs:element ref="p:Person"/> -->
+			<xs:choice>
+				<xs:element ref="p:PhysicalPerson"/>
+				<xs:element ref="p:CorporateBody"/>
+			</xs:choice>
 		</xs:sequence>
 		<xs:attribute name="Id" type="xs:ID" use="optional"/>
 	</xs:complexType>
@@ -123,7 +127,11 @@
 		</xs:annotation>
 		<xs:sequence>
 			<xs:element ref="p:Identification"/>
-			<xs:element ref="p:Person"/>
+			<!-- usp-mp patch, see PATCHES.md: was <xs:element ref="p:Person"/> -->
+			<xs:choice>
+				<xs:element ref="p:PhysicalPerson"/>
+				<xs:element ref="p:CorporateBody"/>
+			</xs:choice>
 			<xs:element ref="p:Address" minOccurs="0" maxOccurs="unbounded"/>
 		</xs:sequence>
 		<xs:attribute name="Id" type="xs:ID" use="optional"/>

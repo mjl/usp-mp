@@ -1,8 +1,15 @@
 """The bundled WSDL/XSD files load and produce the requests the vendor HowTo documents."""
 
+import re
+from pathlib import Path
+
 import pytest
+from lxml import etree
+from zeep import Client, Settings
+from zeep.exceptions import XMLParseError
 
 from usp_mp.adapter import USP_MP_Adapter
+from usp_mp.mail import unparsed_elements
 
 NS = "http://reference.e-government.gv.at/namespace/zustellung/autoabholung/phase2/20181206#"
 SOAP12_ENV = "http://www.w3.org/2003/05/soap-envelope"
@@ -87,3 +94,57 @@ def test_query_types_are_immutable():
 def test_no_class_level_types():
     """Query types used to live in one class-level object that every adapter wrote into."""
     assert not hasattr(USP_MP_Adapter, "types")
+
+
+# --- p:Person substitution patch (wsdl/PATCHES.md, critique S4) ----------------------
+
+RECORDED_GET_DELIVERY = Path(__file__).parent / "data" / "get_delivery_response.xml"
+WSDL_DIR = Path(USP_MP_Adapter.WSDL_PATH).parent
+
+
+def parse_get_delivery(xml: bytes, strict: bool):
+    client = Client(USP_MP_Adapter.WSDL_PATH, settings=Settings(strict=strict))
+    body = etree.fromstring(xml).find(f"{{{SOAP12_ENV}}}Body")[0]
+    return client.get_element("ns0:GetDeliveryResponse").parse(body, client.wsdl.types)
+
+
+@pytest.mark.parametrize("strict", [True, False])
+def test_recorded_demo_response_parses_completely(strict):
+    """A GetDeliveryResponse recorded from the demo service, with CorporateBody in Sender/Receiver."""
+    response = parse_get_delivery(RECORDED_GET_DELIVERY.read_bytes(), strict)
+    delivery = response.Delivery
+
+    assert delivery.Sender.CorporateBody.FullName == "Bundeskanzleramt"
+    assert delivery.Receiver.CorporateBody.FullName == "Testfirma GmbH"
+    assert delivery.Sender.Identification.Type == "urn:publicid:gv.at:baseid+XGLN"
+    assert delivery.MetaData.Subject == "Test-Nachricht: 01"
+    assert unparsed_elements(response) == []
+
+
+def test_unknown_element_is_kept_raw_and_detected():
+    xml = RECORDED_GET_DELIVERY.read_bytes().replace(
+        b"</p:CorporateBody>", b"</p:CorporateBody><p:FutureElement>x</p:FutureElement>", 1
+    )
+
+    # zeep stops mapping the rest of the sequence at the unknown element, so the following
+    # (known) AdditionalCriteria lands in _raw_elements too
+    assert unparsed_elements(parse_get_delivery(xml, strict=False)) == ["FutureElement", "AdditionalCriteria"]
+    with pytest.raises(XMLParseError):
+        parse_get_delivery(xml, strict=True)
+
+
+def test_no_unpatched_person_reference_left():
+    """Guards a vendor update that forgets to re-apply the patch."""
+    for xsd in WSDL_DIR.glob("*.xsd"):
+        text = re.sub(r"<!--.*?-->", "", xsd.read_text(encoding="utf-8"), flags=re.S)
+        assert 'ref="p:Person"' not in text, xsd.name
+
+
+def test_person_substitution_group_has_only_the_patched_members():
+    """The patch's choice is only equivalent if these are the sole members of the group."""
+    members = set()
+    for xsd in WSDL_DIR.glob("*.xsd"):
+        members |= set(re.findall(r'name="(\w+)"[^>]*substitutionGroup="p:Person"', xsd.read_text(encoding="utf-8")))
+
+    assert members == {"PhysicalPerson", "CorporateBody"}
+

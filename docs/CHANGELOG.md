@@ -6,6 +6,7 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/). The repo
 
 ### Added
 
+- `usp_mp.mail.unparsed_elements(value)` lists XML elements zeep couldn't map to the schema; `Delivery` logs a warning on `usp_mp.mail` when a response contains any.
 - `usp_mp.util.write_atomic(path, data)`.
 - `Mailbox.deliveries(..., limit=N)` caps the number of deliveries returned.
 - Exception hierarchy in `usp_mp.errors`, exported from `usp_mp`: `UspMpError`, `CertificateError`, `ApiError` (`.code`, `.message`, `.operation`), `ChecksumError` and `MailboxStateError`. `Mailbox` is now exported from `usp_mp` too.
@@ -20,6 +21,7 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/). The repo
 
 ### Fixed
 
+- Sender and receiver details (`CorporateBody`, and everything after it in `Sender`/`Receiver`) were silently left unparsed, because zeep doesn't support the `p:Person` substitution group. The bundled schema is patched with an equivalent explicit choice (`src/usp_mp/wsdl/PATCHES.md`); responses now parse completely.
 - A second `uspmp --save` run into the same directory failed because the numbered directories already existed, and numbers referred to different deliveries from run to run.
 - `Mailbox.deliveries(all=True)` returned at most 100 deliveries; it now pages through the whole mailbox (1000 per request). All IDs are collected before iterating, so closing or deleting during the loop can't skip deliveries. `all=False` returns up to 1000 (previously 100) and logs a warning on `usp_mp.mail` when the service reports more.
 

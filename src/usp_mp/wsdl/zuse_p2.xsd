@@ -671,7 +671,11 @@ Landeskennung ::= {2} ALPHA; (gem. ISO 3166 - Alpha2)
 				<xs:choice>
 					<xs:element ref="p:Identification"/>
 					<xs:sequence>
-						<xs:element ref="p:Person"/>
+						<!-- usp-mp patch, see PATCHES.md: was <xs:element ref="p:Person"/> -->
+						<xs:choice>
+							<xs:element ref="p:PhysicalPerson"/>
+							<xs:element ref="p:CorporateBody"/>
+						</xs:choice>
 						<xs:element ref="msg:AustrianAddressesOnly" minOccurs="0"/>
 						<xs:element ref="p:Address" minOccurs="0" maxOccurs="unbounded"/>
 					</xs:sequence>

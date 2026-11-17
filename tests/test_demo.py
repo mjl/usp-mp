@@ -33,14 +33,14 @@ from pathlib import Path
 import pytest
 import requests
 from zeep import Client, Settings
-from zeep.exceptions import Fault, XMLParseError
+from zeep.exceptions import Fault
 from zeep.transports import Transport
 
 from snapshot import differences
 from usp_mp import cli
 from usp_mp.adapter import USP_MP_Adapter
 from usp_mp.errors import ApiError, ChecksumError, MailboxStateError
-from usp_mp.mail import Attachment, Delivery, Mailbox
+from usp_mp.mail import Attachment, Delivery, Mailbox, unparsed_elements
 
 pytestmark = pytest.mark.demo
 
@@ -148,14 +148,26 @@ def test_howto_attachment_example_downloads(demo_mailbox):
     assert data.startswith(b"%PDF-")
 
 
+def contact_of(contact) -> dict:
+    """Comparable view of a Sender/Receiver (aa:ContactType)."""
+    ident = contact.Identification
+    return {
+        "identification": None if ident is None else {"type": ident.Type, "value": ident.Value._value_1},
+        "corporate_body": None if contact.CorporateBody is None else contact.CorporateBody.FullName,
+        "physical_person": contact.PhysicalPerson is not None,
+    }
+
+
 def snapshot_of(deliveries, new_ids) -> list[dict]:
-    """The comparable part of the demo data. Sender/receiver are left out (unparsed, critique S4)."""
+    """The comparable part of the demo data."""
     return [
         {
             "id": d.id,
             "new": d.id in new_ids,
             "timestamp": d.delivery_ts.isoformat(),
             "subject": d.subject,
+            "sender": contact_of(d.delivery.Delivery.Sender),
+            "receiver": contact_of(d.delivery.Delivery.Receiver),
             "attachments": [
                 {
                     "id": a.id,
@@ -395,16 +407,18 @@ def test_library_close_and_delete(deliveries):
 
 # --- known schema limitation (critique S4) -----------------------------------------
 
-@pytest.mark.xfail(strict=True, reason="critique S4: Sender/Receiver CorporateBody is left unparsed in _raw_elements")
 def test_sender_and_receiver_fully_parsed(deliveries):
+    """Critique S4, fixed by the schema patch in wsdl/PATCHES.md."""
     for d in deliveries:
         for contact in (d.delivery.Delivery.Sender, d.delivery.Delivery.Receiver):
-            assert not contact._raw_elements
+            assert unparsed_elements(contact) == []  # no _raw_elements, at any depth
+            assert contact.CorporateBody is not None or contact.PhysicalPerson is not None
+        assert unparsed_elements(d.delivery) == []
 
 
-@pytest.mark.xfail(strict=True, raises=XMLParseError,
-                   reason="critique S4: strict parsing rejects the CorporateBody substitution")
 def test_get_delivery_parses_strictly(demo_mailbox, all_ids):
+    """Every live response matches the (patched) bundled schema exactly; this is the
+    schema-drift alarm, since the library itself parses non-strictly."""
     conn = demo_mailbox.connection
     client = Client(
         wsdl=USP_MP_Adapter.WSDL_PATH,
@@ -413,7 +427,9 @@ def test_get_delivery_parses_strictly(demo_mailbox, all_ids):
     )
     service = client.create_service(next(iter(client.wsdl.bindings)), demo_mailbox.uspmp.soap_endpoint)
 
-    service.GetDelivery(all_ids[0], Version=USP_MP_Adapter.VERSION)
+    for delivery_id in all_ids:
+        r = service.GetDelivery(delivery_id, Version=USP_MP_Adapter.VERSION)
+        assert r.Delivery.DeliveryID == delivery_id
 
 
 # --- lifecycle and CLI --------------------------------------------------------------

@@ -6,6 +6,10 @@ import hashlib
 import hmac
 import logging
 from datetime import datetime
+
+from lxml import etree
+from zeep.xsd.valueobjects import CompoundValue
+
 from .adapter import USP_MP_Adapter
 from .errors import ApiError, ChecksumError, MailboxStateError
 from .util import sanitize_filename
@@ -25,6 +29,29 @@ def raise_on_error(response: Any, operation: str) -> None:
     error = getattr(response, "Error", None)
     if error is not None:
         raise ApiError(error.ErrorCode, error.ErrorMessage, operation)
+
+
+def unparsed_elements(value: Any) -> list[str]:
+    """Names of XML elements that zeep couldn't map to the schema, anywhere in `value`.
+
+    With strict=False, zeep keeps elements the schema doesn't describe as raw
+    lxml elements in `_raw_elements` instead of failing.
+    """
+    found: list[str] = []
+
+    def walk(v: Any) -> None:
+        if isinstance(v, CompoundValue):
+            for key, item in v.__values__.items():
+                if key == "_raw_elements":
+                    found.extend(etree.QName(e).localname for e in item or [])
+                else:
+                    walk(item)
+        elif isinstance(v, list):
+            for item in v:
+                walk(item)
+
+    walk(value)
+    return found
 
 
 class Mailbox:
@@ -198,6 +225,11 @@ class Delivery:
             id, Version=connection.uspmp.VERSION
         )
         raise_on_error(self.delivery, "GetDelivery")
+        if unparsed := unparsed_elements(self.delivery):
+            logger.warning(
+                "GetDelivery response for %s contains elements the bundled schema doesn't "
+                "describe; they are not parsed: %s", id, ", ".join(sorted(set(unparsed))),
+            )
 
     def __repr__(self) -> str:
         return f"Delivery<{self.id} [{self.subject}]>"

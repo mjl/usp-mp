@@ -91,10 +91,12 @@ class USP_MP_Adapter:
 
     @staticmethod
     def zeep_settings(headers: dict[str, str]) -> Settings:
-        # strict=False: zeep can't parse the CorporateBody substitution for p:Person in
-        # Sender/Receiver (strict=True fails GetDelivery with "Unexpected element
-        # ...CorporateBody, expected ...Person"). Side effect: CorporateBody ends up unparsed
-        # in _raw_elements. See docs/critique.md S4 / fix-plan 4.2.
+        # The bundled schema is patched so that zeep can parse the p:Person substitution
+        # (PhysicalPerson/CorporateBody) in Sender/Receiver; see wsdl/PATCHES.md. With the
+        # patch, all demo responses also parse with strict=True (tests/test_demo.py checks
+        # that). strict=False is kept deliberately: if the service ever sends an element the
+        # bundled schema doesn't know, retrieval keeps working, the element ends up in
+        # _raw_elements, and Delivery logs a warning instead of failing.
         # zeep reads `strict` from the settings the WSDL Document was parsed with.
         return Settings(strict=False, extra_http_headers=headers)  # pyright: ignore[reportCallIssue]
 

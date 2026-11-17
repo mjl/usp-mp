@@ -8,6 +8,22 @@
       "new": true,
       "timestamp": "2020-05-26T08:40:00+02:00",
       "subject": "Test-Nachricht: 01",
+      "sender": {
+        "identification": {
+          "type": "urn:publicid:gv.at:baseid+XGLN",
+          "value": "9110002628957"
+        },
+        "corporate_body": "Bundeskanzleramt",
+        "physical_person": false
+      },
+      "receiver": {
+        "identification": {
+          "type": "urn:publicid:gv.at:baseid+XFN",
+          "value": "123456a"
+        },
+        "corporate_body": "Testfirma GmbH",
+        "physical_person": false
+      },
       "attachments": [
         {
           "id": "bae513b8-b141-11ea-9128-e3b5033f576c",
@@ -36,6 +52,22 @@
       "new": false,
       "timestamp": "2020-05-26T08:40:00+02:00",
       "subject": "Test-Nachricht: 02",
+      "sender": {
+        "identification": {
+          "type": "urn:publicid:gv.at:baseid+XGLN",
+          "value": "9110002628957"
+        },
+        "corporate_body": "Bundeskanzleramt",
+        "physical_person": false
+      },
+      "receiver": {
+        "identification": {
+          "type": "urn:publicid:gv.at:baseid+XFN",
+          "value": "123456a"
+        },
+        "corporate_body": "Testfirma GmbH",
+        "physical_person": false
+      },
       "attachments": [
         {
           "id": "bae56106-b141-11ea-b542-2bf347e05b72",
@@ -64,6 +96,22 @@
       "new": false,
       "timestamp": "2020-05-26T08:40:00+02:00",
       "subject": "Test-Nachricht: 03",
+      "sender": {
+        "identification": {
+          "type": "urn:publicid:gv.at:baseid+XGLN",
+          "value": "9110002628957"
+        },
+        "corporate_body": "Bundeskanzleramt",
+        "physical_person": false
+      },
+      "receiver": {
+        "identification": {
+          "type": "urn:publicid:gv.at:baseid+XFN",
+          "value": "123456a"
+        },
+        "corporate_body": "Testfirma GmbH",
+        "physical_person": false
+      },
       "attachments": [
         {
           "id": "bae5afd0-b141-11ea-8a48-3748f327b4a2",
@@ -92,6 +140,22 @@
       "new": false,
       "timestamp": "2020-05-26T08:40:00+02:00",
       "subject": "Test-Nachricht: 04",
+      "sender": {
+        "identification": {
+          "type": "urn:publicid:gv.at:baseid+XGLN",
+          "value": "9110002628957"
+        },
+        "corporate_body": "Bundeskanzleramt",
+        "physical_person": false
+      },
+      "receiver": {
+        "identification": {
+          "type": "urn:publicid:gv.at:baseid+XFN",
+          "value": "123456a"
+        },
+        "corporate_body": "Testfirma GmbH",
+        "physical_person": false
+      },
       "attachments": [
         {
           "id": "bae5fd8c-b141-11ea-91a1-9f84987cc076",
@@ -130,6 +194,22 @@
       "new": true,
       "timestamp": "2020-05-26T08:40:00+02:00",
       "subject": "Test-Nachricht: 05",
+      "sender": {
+        "identification": {
+          "type": "urn:publicid:gv.at:baseid+XGLN",
+          "value": "9110002628957"
+        },
+        "corporate_body": "Bundeskanzleramt",
+        "physical_person": false
+      },
+      "receiver": {
+        "identification": {
+          "type": "urn:publicid:gv.at:baseid+XFN",
+          "value": "123456a"
+        },
+        "corporate_body": "Testfirma GmbH",
+        "physical_person": false
+      },
       "attachments": [
         {
           "id": "bae64b84-b141-11ea-b787-6f83804e0804",
@@ -148,6 +228,22 @@
       "new": false,
       "timestamp": "2020-05-26T08:40:00+02:00",
       "subject": "Test-Nachricht: 06",
+      "sender": {
+        "identification": {
+          "type": "urn:publicid:gv.at:baseid+XGLN",
+          "value": "9110002628957"
+        },
+        "corporate_body": "Bundeskanzleramt",
+        "physical_person": false
+      },
+      "receiver": {
+        "identification": {
+          "type": "urn:publicid:gv.at:baseid+XFN",
+          "value": "123456a"
+        },
+        "corporate_body": "Testfirma GmbH",
+        "physical_person": false
+      },
       "attachments": [
         {
           "id": "bae698be-b141-11ea-85ef-374dbe4ddd22",
@@ -166,6 +262,22 @@
       "new": false,
       "timestamp": "2020-05-26T08:40:00+02:00",
       "subject": "Test-Nachricht: 07",
+      "sender": {
+        "identification": {
+          "type": "urn:publicid:gv.at:baseid+XGLN",
+          "value": "9110002628957"
+        },
+        "corporate_body": "Bundeskanzleramt",
+        "physical_person": false
+      },
+      "receiver": {
+        "identification": {
+          "type": "urn:publicid:gv.at:baseid+XFN",
+          "value": "123456a"
+        },
+        "corporate_body": "Testfirma GmbH",
+        "physical_person": false
+      },
       "attachments": [
         {
           "id": "bae6e65c-b141-11ea-97ea-bb00aa0c4c11",
@@ -184,6 +296,22 @@
       "new": false,
       "timestamp": "2020-05-26T08:40:00+02:00",
       "subject": "Test-Nachricht: 08",
+      "sender": {
+        "identification": {
+          "type": "urn:publicid:gv.at:baseid+XGLN",
+          "value": "9110002628957"
+        },
+        "corporate_body": "Bundeskanzleramt",
+        "physical_person": false
+      },
+      "receiver": {
+        "identification": {
+          "type": "urn:publicid:gv.at:baseid+XFN",
+          "value": "123456a"
+        },
+        "corporate_body": "Testfirma GmbH",
+        "physical_person": false
+      },
       "attachments": [
         {
           "id": "bae7335a-b141-11ea-a2ef-cb5ee7ae3679",
@@ -202,6 +330,22 @@
       "new": false,
       "timestamp": "2020-05-26T08:40:00+02:00",
       "subject": "Test-Nachricht: 09",
+      "sender": {
+        "identification": {
+          "type": "urn:publicid:gv.at:baseid+XGLN",
+          "value": "9110002628957"
+        },
+        "corporate_body": "Bundeskanzleramt",
+        "physical_person": false
+      },
+      "receiver": {
+        "identification": {
+          "type": "urn:publicid:gv.at:baseid+XFN",
+          "value": "123456a"
+        },
+        "corporate_body": "Testfirma GmbH",
+        "physical_person": false
+      },
       "attachments": [
         {
           "id": "bae781de-b141-11ea-a0bf-5bd8899f60ca",
@@ -220,6 +364,22 @@
       "new": true,
       "timestamp": "2020-05-26T08:40:00+02:00",
       "subject": "Test-Nachricht: 10",
+      "sender": {
+        "identification": {
+          "type": "urn:publicid:gv.at:baseid+XGLN",
+          "value": "9110002628957"
+        },
+        "corporate_body": "Bundeskanzleramt",
+        "physical_person": false
+      },
+      "receiver": {
+        "identification": {
+          "type": "urn:publicid:gv.at:baseid+XFN",
+          "value": "123456a"
+        },
+        "corporate_body": "Testfirma GmbH",
+        "physical_person": false
+      },
       "attachments": [
         {
           "id": "bae7ce3c-b141-11ea-96cb-1b64632d8d13",

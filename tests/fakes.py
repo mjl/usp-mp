@@ -54,6 +54,8 @@ class FakeDelivery:
     timestamp: datetime.datetime
     read: bool = False
     delivery_id: str = field(default_factory=_new_id)
+    sender: str = "Bundeskanzleramt"  # CorporateBody FullName, as on the demo service
+    receiver: str = "Testfirma GmbH"
 
 
 class FakeService:
@@ -150,6 +152,8 @@ class FakeService:
 
         return self._response("GetDeliveryResponse", Delivery={
             "DeliveryID": d.delivery_id,
+            "Sender": {"CorporateBody": {"FullName": d.sender}},
+            "Receiver": {"CorporateBody": {"FullName": d.receiver}},
             "MetaData": {"DeliveryTimestamp": d.timestamp, "Subject": d.subject},
             "AttachmentList": {"Attachment": [
                 {

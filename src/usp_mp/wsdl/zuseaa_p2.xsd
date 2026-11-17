@@ -142,7 +142,11 @@
 					<xs:documentation>Darf nur bei Behörden und Unternehmen gesetzt sein.</xs:documentation>
 				</xs:annotation>
 			</xs:element>
-			<xs:element ref="p:Person"/>
+			<!-- usp-mp patch, see PATCHES.md: was <xs:element ref="p:Person"/> -->
+			<xs:choice>
+				<xs:element ref="p:PhysicalPerson"/>
+				<xs:element ref="p:CorporateBody"/>
+			</xs:choice>
 			<xs:element
 				ref="msg:AdditionalCriteria"
 				minOccurs="0"/>

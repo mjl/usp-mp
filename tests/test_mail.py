@@ -394,6 +394,34 @@ def test_close_and_delete_errors_raise(mailbox, service, operation):
         delivery.close() if operation == "CloseDelivery" else delivery.delete()
 
 
+def test_normal_delivery_logs_no_schema_warning(mailbox, service, caplog):
+    service.add_delivery()
+
+    with caplog.at_level("WARNING", logger="usp_mp.mail"):
+        [delivery] = mailbox.deliveries()
+
+    assert delivery.delivery.Delivery.Sender.CorporateBody.FullName == "Bundeskanzleramt"
+    assert caplog.text == ""
+
+
+def test_unknown_response_elements_are_logged(mailbox, service, monkeypatch, caplog):
+    """Schema drift on the service side: retrieval keeps working, but it is visible."""
+    from test_wsdl import RECORDED_GET_DELIVERY, parse_get_delivery
+
+    fake = service.add_delivery()
+    xml = RECORDED_GET_DELIVERY.read_bytes().replace(
+        b"</p:CorporateBody>", b"</p:CorporateBody><p:FutureElement>x</p:FutureElement>", 1
+    )
+    monkeypatch.setattr(service, "GetDelivery", lambda delivery_id, Version=None: parse_get_delivery(xml, strict=False))
+
+    with caplog.at_level("WARNING", logger="usp_mp.mail"):
+        [delivery] = mailbox.deliveries()
+
+    assert delivery.subject == "Test-Nachricht: 01"
+    assert f"GetDelivery response for {fake.delivery_id} contains elements" in caplog.text
+    assert "FutureElement" in caplog.text
+
+
 # --- attachments --------------------------------------------------------------------
 
 def test_attachment_properties(mailbox, service):

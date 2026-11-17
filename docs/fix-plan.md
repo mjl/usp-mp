@@ -20,7 +20,7 @@ Run with `tests/test_demo.py` and a real client certificate:
 - The service validates requests (`Limit` 0 or 1001 → `Validation error` fault), and it accepts zeep's `<Query xsi:type=…>` (B11).
 - Checksums: `SHA512` on all attachments, `bytes` values, and the declared `Size` matches.
 - Unknown UUIDs: `000` / "Unkown uuid." for get, close and delete. Unknown attachment: HTTP 400. Close and delete on known IDs return `Success`; the demo ignores them.
-- **4.2 matters more than planned:** with `strict=False`, `Sender`/`Receiver` `CorporateBody` and `AdditionalCriteria` are not parsed but left in `_raw_elements`, so 4.1's `sender`/`receiver` accessors cannot work until 4.2 is solved. With `strict=True`, `GetDelivery` fails on `CorporateBody`.
+- **4.2 matters more than planned (now done):** with `strict=False`, `Sender`/`Receiver` `CorporateBody` and `AdditionalCriteria` are not parsed but left in `_raw_elements`, so 4.1's `sender`/`receiver` accessors cannot work until 4.2 is solved. With `strict=True`, `GetDelivery` fails on `CorporateBody`.
 
 ## Phase 0: Test scaffolding (first, so every later fix lands with a test) — done
 
@@ -174,7 +174,9 @@ This is inherent to the API: one `GetDelivery` per ID. After 2.3, the IDs are fe
 On `Delivery`, add properties for the useful `MetaData` fields: `app_delivery_id`, `zs_delivery_id`, `gz` (Geschäftszahl), `origin` and `delivery_quality`. Also add `sender` and `receiver`, returning a small dataclass (`name`, `kind` set to "person" or "corporate body", and `identification`). Wrapping the zeep `Delivery.delivery` and `Attachment.attachment` objects, keep both reachable as `.raw` for advanced use, and keep the old attribute names as aliases for one release.
 Check the actual field shapes against demo data first, because the `Person`/`CorporateBody` substitution (see 4.2) affects how `sender` parses.
 
-### 4.2 `strict=False` [S4]
+### 4.2 `strict=False` [S4] — done
+
+**Result:** step 1 (the schema patch) worked; all demo responses parse with `strict=True`. Step 2 was decided differently from the plan: the library **keeps `strict=False`**, so an unknown element in a future response can't block mail retrieval. Drift becomes visible instead: `Delivery` logs a warning listing unparsed elements (`usp_mp.mail.unparsed_elements`), and the demo suite parses every live response with `strict=True`. Note that zeep also leaves everything after an unknown element in the same sequence unparsed. 4.1 (sender/receiver accessors) is unblocked.
 
 Confirmed on the demo service (see above): sender and receiver organisation data is currently lost, and the two `xfail` tests in `tests/test_demo.py` will flag when this is fixed. Do 4.2 before 4.1.
 
