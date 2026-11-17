@@ -1,90 +1,50 @@
-:# Python
-*.pyc
-*.pyo
-*.pyd
+# Python
 __pycache__/
-*.py[cod]$*.py.class
+*.py[cod]
 
-# Distribution / packaging
-.Python
-env/
-venv/
-.build/
-develop-eggs/
+# Packaging
+build/
 dist/
-downloads/
-eggs/
-.eggs/
-lib64/
-parts/
-sdist/
-var/
-wheels/
 *.egg-info/
-.installed.cfg
 *.egg
+.eggs/
 
-# PyInstaller
-*.manifest
-*.spec
+# Virtual environments
+.venv/
+venv/
+env/
 
-# Unit test / coverage
+# Tests / coverage
+.pytest_cache/
+.coverage
+.coverage.*
 htmlcov/
 .tox/
 .nox/
-.coverage
-.coverage.*
-.cache
-pytest.xml
-*.cover
-*.log
 
-# Sphinx documentation
-docs/_build/
-docs/_static/
-docs/_templates/
+# Type checkers / linters
+.mypy_cache/
+.ruff_cache/
+.pyright/
 
-# Environments
-.env
-.venv
-env/
-ENV/
-env.bak/
-venv.bak/
-
-# Virtualenv
-bin/
-lib/
-lib64/
-include/
-pyvenv.cfg
-pip-selfcheck.json
-
-# Certificates (private)
+# The bundled BRZ CA certificate is public and must stay tracked.
 *.p12
 *.pem
 *.key
-*.cer
 *.crt
-*.pkey
+*.cer
+!src/usp_mp/certs/*.cer
+.env
 
-# IDE
+# VCS (jj colocated with git)
+.jj/
+
+# Editors
 .vscode/
-.idea/
 *.swp
 *.swo
 *~
 
 # OS
 .DS_Store
-.DS_Store?
 ._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
-
-# Project specific
-.lock
-CACHEDIR.TAG
-.*
