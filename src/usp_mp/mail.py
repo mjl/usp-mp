@@ -85,7 +85,7 @@ class Attachment(USP_MP_Base):
         if verify_checksum:
             hash = hashlib.new(self.hash[0])
             if hash is None:
-                raise KeyError(f"Could not instanciate hash algorithm {self.hash[0]}")
+                raise KeyError(f"Could not instantiate hash algorithm {self.hash[0]}")
             hash.update(content_bytes)
 
             if hash.digest() != self.hash[1]:

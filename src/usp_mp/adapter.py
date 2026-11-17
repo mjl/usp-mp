@@ -67,7 +67,7 @@ class USP_MP_Adapter:
         return private_key, certificate
 
     def read_cert(self, private_key, certificate):
-        """Read cert and key pem rom private_key and certificate"""
+        """Read cert and key PEM from private_key and certificate"""
         cert_pem = certificate.public_bytes(encoding=serialization.Encoding.PEM)
         key_pem = private_key.private_bytes(
             encoding=serialization.Encoding.PEM,

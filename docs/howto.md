@@ -1,16 +1,16 @@
 # USP Mein Postkorb Autoabholung
 
-This library wraps the Austrian Government's "Unternehmer-Service-Portal -- Mein Postkorb" SOAP/REST API in a convenient python abstraction.
+This library wraps the Austrian Government's "Unternehmensserviceportal — Mein Postkorb" SOAP/REST API in a convenient Python abstraction.
 
 ## Prerequisites
 
-- USP user with Postbevollmaechtigter role to activate "Autoabholung".
+- USP user with Postbevollmächtigter role to activate "Autoabholung".
 - USP admin to generate client certificates.
 - Client certificate bundle (.p12) and its password.
 
 ## Certificate setup checklist
 
-- Activate _Autoabholung_ in _Mein Postkorb_ (by someone with role `Postbevollmaechtigter`).
+- Activate _Autoabholung_ in _Mein Postkorb_ (by someone with role `Postbevollmächtigter`).
 - Generate and download a client certificate (.p12) in the Autoabholung section:
   "Settings" -> "Automatische Abholung" -> "Zertifikat erzeugen" (client)
 - Keep the .p12 password; it is required by the client.
@@ -20,7 +20,7 @@ This library wraps the Austrian Government's "Unternehmer-Service-Portal -- Mein
 A small demo utility is included.
 
 ```bash
-python uspmp.py \
+uspmp \
   --client-certificate /path/to/certificate.p12 \
   --client-password ENV:USP_P12_PASS
 ```
@@ -61,12 +61,12 @@ for delivery in mbox.deliveries(all=False):
 `Mailbox.deliveries()` yields `Delivery` objects.
 
 - `all=True` returns all deliveries in the mailbox.
-- `all=False` return unread deliveries only.
+- `all=False` returns unread deliveries only.
 - Results are capped at 100 by the built-in selector; use pagination via SOAP if you need more (not yet implemented).
 
 ### Delivery
 
-A delivery is akin to an email, in the Mein Postkorb lingo. As such, it contains meta data (like subject, delivery timestamp, sender, recipient etc.) and attachments.
+A delivery is akin to an email in Mein Postkorb lingo. As such, it contains metadata (like subject, delivery timestamp, sender, recipient etc.) and attachments.
 `Delivery.attachments()` yields `Attachment` objects.
 
 Methods:
