@@ -8,6 +8,6 @@ These files are published by the Bundesrechenzentrum (BRZ) for the *Mein Postkor
 | `automatische-abholung-beispielprojekt.zip` | BRZ's Maven example project, including the service's WSDL and XSDs | According to the How-To, the download link is in the documentation area of the *Automatische Abholung* settings in USP *Mein Postkorb* |
 | `../Mein_Postkorb_AutomatischeAbholung_HowTo.txt` | Plain-text extraction of the PDF | Generated from the PDF, so it can be searched and diffed. Tests and docs cite it, for example for the demo's delivery IDs |
 
-The WSDL and XSDs bundled in `src/usp_mp/wsdl/` come from the example project. Five files are byte-identical to it. `zuseaa_p2.xsd` has local changes, which are documented in `src/usp_mp/wsdl/PATCHES.md`.
+The WSDL and XSDs bundled in `src/usp_mp/wsdl/` come from the example project. Three files are byte-identical to it; the other three have small local changes, which are documented in `src/usp_mp/wsdl/PATCHES.md`.
 
 When BRZ publishes new versions, replace these files, regenerate the `.txt`, and follow `PATCHES.md` to update the bundled schema.

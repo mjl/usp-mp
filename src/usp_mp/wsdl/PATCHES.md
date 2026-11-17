@@ -2,7 +2,7 @@
 
 The files in this directory are copies of the Mein Postkorb *Automatische Abholung* WSDL and schemas (version 2.4.0-004), taken from BRZ's Maven example project (`docs/api_docs/automatische-abholung-beispielprojekt.zip`, see `docs/api_docs/README.md`). They are bundled because the service does not serve `?wsdl`. This file records every local change, so the changes can be re-applied when the files are replaced with a newer vendor version.
 
-`zuseaa_p2.wsdl`, `zuse_p2.xsd`, `zusetypes_p2.xsd` and `W3C-XMLDSig.xsd` are byte-identical to the example project. `zuseaa_p2.xsd` (changes 0 and 1) and `zuse_mypersondata_en_p2.xsd` and `zuse_p2.xsd` (change 1) are not.
+`zuseaa_p2.wsdl`, `zusetypes_p2.xsd` and `W3C-XMLDSig.xsd` are byte-identical to the example project. `zuse_p2.xsd` and `zuse_mypersondata_en_p2.xsd` differ only by change 1, and `zuseaa_p2.xsd` by changes 0 and 1.
 
 ## 0. Flattened directory layout
 
