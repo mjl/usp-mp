@@ -12,6 +12,8 @@ Changes since `1.0.20260224` (the version number has not been bumped; commits da
 - `uspmp` console script (`[project.scripts]`), installed with the package. The CLI now lives in `src/usp_mp/cli.py`.
 - Installation instructions in `README.md`.
 - `docs/critique.md`: project review with status of each finding.
+- `docs/fix-plan.md`: phased plan for the open critique items.
+- First test suite, `tests/test_adapter_tls.py`: mutual-TLS tests against a local HTTPS server (run with pytest; `[tool.pytest.ini_options]` added).
 
 ### Changed
 
@@ -22,8 +24,13 @@ Changes since `1.0.20260224` (the version number has not been bumped; commits da
 - `.gitignore` rewritten: dropped the blanket `.*` rule and unused template sections, added `.jj/`, and the bundled CA certificate is explicitly un-ignored.
 - Documentation wording and spelling fixes (service and portal names, "Postbevollmächtigter", various typos).
 
+### Security
+
+- The client private key is no longer written to disk in plaintext for the duration of a connection. The adapter builds one `SSLContext` at construction; the key touches the disk only encrypted with a random one-time password, in a private temp directory that is removed immediately after loading (also on error). `USP_MP_Adapter` no longer has `cert_pem`/`key_pem` attributes or `read_cert()`; it has `ssl_context` and `build_ssl_context()` instead.
+
 ### Fixed
 
+- Attachment downloads now go through the session: a timeout applies (previously none), and the `USP_MP/<version>` User-Agent and connection reuse are used.
 - `import usp_mp.mail` raised `NameError` on Python before 3.14 (forward reference to `Delivery` in an annotation); added `from __future__ import annotations`.
 - CLI exit status: `main()`'s return value is now actually used (`raise SystemExit(main())`) instead of being discarded.
 
