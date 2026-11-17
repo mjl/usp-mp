@@ -181,9 +181,9 @@ def test_query_selectors_and_version(mailbox, service):
 
     (_, all_sel, v1), (_, new_sel, v2) = service.calls_to("QueryDeliveries")
     assert all_sel._xsd_type.name == "AllDeliveriesType"
-    assert (all_sel.Paging.Start, all_sel.Paging.Limit) == (0, 100)
+    assert (all_sel.Paging.Start, all_sel.Paging.Limit) == (0, 1000)
     assert new_sel._xsd_type.name == "NewDeliveriesOnlyType"
-    assert new_sel.Limit == 100
+    assert new_sel.Limit == 1000
     assert v1 == v2 == USP_MP_Adapter.VERSION
 
 
@@ -200,11 +200,143 @@ def test_query_error_raises(mailbox, service):
 
 
 
-@pytest.mark.xfail(strict=True, reason="critique B2: deliveries() stops after the first 100")
+# --- pagination ---------------------------------------------------------------------
+
+def paging_calls(service):
+    return [(sel.Paging.Start, sel.Paging.Limit) for _, sel, _ in service.calls_to("QueryDeliveries")]
+
+
 def test_all_deliveries_beyond_first_page(mailbox, service):
+    """Critique B2: previously stopped after 100."""
     service.add_deliveries(250)
 
     assert len(list(mailbox.deliveries(all=True))) == 250
+
+
+def test_pages_through_large_mailbox(mailbox, service):
+    expected = [d.delivery_id for d in service.add_deliveries(2500)]
+
+    assert ids(mailbox.deliveries(all=True)) == expected
+    assert paging_calls(service) == [(0, 1000), (1000, 1000), (2000, 1000)]
+
+
+def test_exact_page_multiple_needs_no_extra_query(mailbox, service):
+    service.add_deliveries(2000)
+
+    assert len(list(mailbox.deliveries(all=True))) == 2000
+    assert paging_calls(service) == [(0, 1000), (1000, 1000)]
+
+
+def test_ids_are_queried_on_call_deliveries_fetched_lazily(mailbox, service):
+    service.add_deliveries(3)
+
+    iterator = mailbox.deliveries()
+
+    assert len(service.calls_to("QueryDeliveries")) == 1
+    assert service.calls_to("GetDelivery") == []
+    next(iterator)
+    assert len(service.calls_to("GetDelivery")) == 1
+
+
+@pytest.mark.parametrize(("limit", "expected_calls"), [
+    (5, [(0, 5)]),
+    (1000, [(0, 1000)]),
+    (1500, [(0, 1000), (1000, 500)]),
+])
+def test_limit_all(mailbox, service, limit, expected_calls):
+    expected = [d.delivery_id for d in service.add_deliveries(2500)][:limit]
+
+    assert ids(mailbox.deliveries(all=True, limit=limit)) == expected
+    assert paging_calls(service) == expected_calls
+
+
+def test_limit_larger_than_mailbox(mailbox, service):
+    service.add_deliveries(3)
+
+    assert len(list(mailbox.deliveries(limit=50))) == 3
+
+
+@pytest.mark.parametrize("limit", [0, -1])
+def test_invalid_limit(mailbox, limit):
+    with pytest.raises(ValueError, match="limit must be at least 1"):
+        mailbox.deliveries(limit=limit)
+
+
+def test_deleting_while_iterating_skips_nothing(mailbox, service):
+    """IDs are collected before yielding, so deletions can't shift the server-side offsets."""
+    expected = [d.delivery_id for d in service.add_deliveries(1500)]
+
+    seen = []
+    for delivery in mailbox.deliveries(all=True):
+        seen.append(delivery.id)
+        delivery.close(delete=True)
+
+    assert seen == expected
+    assert service.deliveries == {}
+
+
+def test_delivery_arriving_mid_paging_is_not_duplicated(mailbox, service, monkeypatch):
+    service.add_deliveries(1500)
+    original = service.QueryDeliveries
+
+    def query_then_new_mail(selector, Version=None):
+        response = original(selector, Version=Version)
+        if len(service.calls_to("QueryDeliveries")) == 1:
+            # new delivery lands at the front: page 2 now starts one ID earlier
+            new = service.add_delivery("late arrival")
+            service.deliveries = {new.delivery_id: new, **{k: v for k, v in service.deliveries.items() if k != new.delivery_id}}
+        return response
+
+    monkeypatch.setattr(service, "QueryDeliveries", query_then_new_mail)
+
+    result = ids(mailbox.deliveries(all=True))
+
+    assert len(result) == len(set(result))
+    assert len(result) == 1500  # the late arrival comes with the next query
+
+
+def test_inconsistent_hitcount_stops_on_empty_page(mailbox, service, monkeypatch):
+    service.add_deliveries(3)
+    original = service.QueryDeliveries
+
+    def inflated(selector, Version=None):
+        response = original(selector, Version=Version)
+        response.ResultsList.HitCount = 10_000
+        return response
+
+    monkeypatch.setattr(service, "QueryDeliveries", inflated)
+
+    assert len(list(mailbox.deliveries(all=True))) == 3
+    assert paging_calls(service) == [(0, 1000), (3, 1000)]
+
+
+def test_new_only_is_capped_and_warns(mailbox, service, caplog):
+    service.add_deliveries(1200)
+
+    with caplog.at_level("WARNING", logger="usp_mp.mail"):
+        result = list(mailbox.deliveries(all=False))
+
+    assert len(result) == 1000
+    assert "1200 new deliveries, but only 1000 returned" in caplog.text
+
+
+def test_new_only_with_limit_does_not_warn(mailbox, service, caplog):
+    service.add_deliveries(20)
+
+    with caplog.at_level("WARNING", logger="usp_mp.mail"):
+        result = list(mailbox.deliveries(all=False, limit=5))
+
+    assert len(result) == 5
+    assert service.calls_to("QueryDeliveries")[0][1].Limit == 5
+    assert caplog.text == ""
+
+
+def test_new_only_without_truncation_does_not_warn(mailbox, service, caplog):
+    service.add_deliveries(20)
+
+    with caplog.at_level("WARNING", logger="usp_mp.mail"):
+        assert len(list(mailbox.deliveries(all=False))) == 20
+    assert caplog.text == ""
 
 
 # --- Delivery -----------------------------------------------------------------------

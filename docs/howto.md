@@ -70,9 +70,10 @@ with Mailbox(p12_path, p12_pass, prod=False) as mbox:
 
 `Mailbox.deliveries()` yields `Delivery` objects.
 
-- `all=True` returns all deliveries in the mailbox.
-- `all=False` returns unread deliveries only.
-- Results are capped at 100 by the built-in selector; use pagination via SOAP if you need more (not yet implemented).
+- `all=True` returns all deliveries in the mailbox, paging through it 1000 at a time.
+- `all=False` returns unread deliveries only. The service can't page these, so at most 1000 are returned per call, and a warning is logged (logger `usp_mp.mail`) when there are more. Close the processed deliveries and call again for the rest. On the demo service, the limit is applied to the whole mailbox before unread deliveries are picked, so fewer may come back; the same warning covers that.
+- `limit=N` caps the number of deliveries returned.
+- The delivery IDs are queried when `deliveries()` is called; each delivery's details are fetched as you iterate. So closing or deleting deliveries inside the loop is safe and doesn't skip any.
 
 ### Delivery
 

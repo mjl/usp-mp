@@ -6,12 +6,18 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/). The repo
 
 ### Added
 
+- `Mailbox.deliveries(..., limit=N)` caps the number of deliveries returned.
 - Exception hierarchy in `usp_mp.errors`, exported from `usp_mp`: `UspMpError`, `CertificateError`, `ApiError` (`.code`, `.message`, `.operation`), `ChecksumError` and `MailboxStateError`. `Mailbox` is now exported from `usp_mp` too.
-- Demo-service test suite (`tests/test_demo.py`, marker `demo`): 36 tests against the Mein Postkorb TEST endpoint plus 2 strict `xfail` tests for the known `CorporateBody` parsing gap. Besides invariants, they compare the fixed demo data against the values documented in the vendor HowTo and against a golden snapshot (`tests/data/demo_snapshot.json`, re-recorded with `--update-demo-snapshot`). Each person running them provides their own client certificate and password via `--p12=` / `--p12-password-file=` / `--p12-password=` or `USP_MP_P12` / `USP_MP_P12_PASS_FILE` / `USP_MP_P12_PASS`; without a certificate they are skipped. See README "Tests against the demo service".
+- Demo-service test suite (`tests/test_demo.py`, marker `demo`): tests against the Mein Postkorb TEST endpoint, plus strict `xfail` tests for the known `CorporateBody` parsing gap. Besides invariants, they compare the fixed demo data against the values documented in the vendor HowTo and against a golden snapshot (`tests/data/demo_snapshot.json`, re-recorded with `--update-demo-snapshot`). Each person running them provides their own client certificate and password via `--p12=` / `--p12-password-file=` / `--p12-password=` or `USP_MP_P12` / `USP_MP_P12_PASS_FILE` / `USP_MP_P12_PASS`; without a certificate they are skipped. See README "Tests against the demo service".
 
 ### Changed
 
+- `Mailbox.deliveries()` queries the delivery IDs when called (previously on first iteration); each delivery is still fetched lazily.
 - Error types and messages: certificate problems raise `CertificateError` (previously `RuntimeError("Failed to initialize USP_MP_Adapter: …")`, or `ssl.SSLError`/`ValueError` from the adapter); API errors raise `ApiError` with messages like `GetDelivery failed: [000] Unkown uuid.`; checksum problems raise `ChecksumError`; using a closed or unopened mailbox raises `MailboxStateError`. The previous builtin types still match (`ApiError` and `ChecksumError` are `ValueError`s, `MailboxStateError` is a `RuntimeError`), except for certificate errors. The CLI prefixes unexpected (non-`usp_mp`) errors with their type.
+
+### Fixed
+
+- `Mailbox.deliveries(all=True)` returned at most 100 deliveries; it now pages through the whole mailbox (1000 per request). All IDs are collected before iterating, so closing or deleting during the loop can't skip deliveries. `all=False` returns up to 1000 (previously 100) and logs a warning on `usp_mp.mail` when the service reports more.
 
 ## [1.0.20261117] - 2026-11-17
 

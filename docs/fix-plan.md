@@ -109,7 +109,9 @@ def raise_on_error(self, r: Any, operation: str) -> None:
 The schema guarantees both fields whenever `Error` is present, so the `in` checks can go. Make it a module-level function, so the `USP_MP_Base` mixin disappears.
 **Tests:** response with an error, response without one, response object lacking an `Error` attribute.
 
-### 2.3 Pagination [B2]
+### 2.3 Pagination [B2] — done
+
+Implemented as below, with warning-only for new-only truncation (maintainer decision; no drain mode). The live check found critique B12: on the demo, new-only `Limit` applies before the unread filter. The warning still fires because it compares against `HitCount`.
 
 `Mailbox.deliveries()`:
 - **All deliveries:** loop `Start = 0, 1000, 2000…` with `Limit=1000` until the collected count reaches `HitCount` or a page comes back empty. **Collect all IDs before yielding.** Otherwise a caller that closes or deletes during iteration shifts the server-side offsets and skips messages.

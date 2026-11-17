@@ -268,6 +268,38 @@ def test_mailbox_deliveries_match_raw_query(deliveries, all_ids):
     assert [d.id for d in deliveries] == all_ids
 
 
+def test_library_pages_through_live_service(demo_mailbox, monkeypatch):
+    """Mailbox.deliveries() paging loop against the real service, with tiny pages."""
+    from usp_mp import mail
+
+    monkeypatch.setattr(mail, "PAGE_SIZE", 3)
+
+    assert [d.id for d in demo_mailbox.deliveries(all=True)] == HOWTO_ALL_IDS
+    assert [d.id for d in demo_mailbox.deliveries(all=True, limit=4)] == HOWTO_ALL_IDS[:4]
+
+
+def test_library_warns_when_new_only_is_truncated(demo_mailbox, monkeypatch, caplog):
+    from usp_mp import mail
+
+    monkeypatch.setattr(mail, "PAGE_SIZE", 2)
+    with caplog.at_level("WARNING", logger="usp_mp.mail"):
+        result = [d.id for d in demo_mailbox.deliveries(all=False)]
+
+    # Only the first new delivery: Limit applies before the unread filter (see below)
+    assert result == HOWTO_NEW_IDS[:1]
+    assert "3 new deliveries, but only 1 returned" in caplog.text
+
+
+@pytest.mark.parametrize(("limit", "returned"), [(1, 1), (4, 1), (5, 2), (9, 2), (10, 3)])
+def test_new_only_limit_applies_before_unread_filter(raw, limit, returned):
+    """Observed demo behaviour (critique B12): Limit caps the *whole* mailbox, then unread
+    deliveries are picked from that window. The new ones are positions 1, 5 and 10."""
+    r = raw.query_new(limit=limit)
+
+    assert r.ResultsList.HitCount == len(HOWTO_NEW_IDS)
+    assert list(r.ResultsList.DeliveryID) == HOWTO_NEW_IDS[:returned]
+
+
 def test_mailbox_new_deliveries_match_raw_query(demo_mailbox, new_ids):
     assert [d.id for d in demo_mailbox.deliveries(all=False)] == new_ids
 

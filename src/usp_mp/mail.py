@@ -4,10 +4,16 @@ from collections.abc import Iterator
 from typing import Any
 import hashlib
 import hmac
+import logging
 from datetime import datetime
 from .adapter import USP_MP_Adapter
 from .errors import ApiError, ChecksumError, MailboxStateError
 from .util import sanitize_filename
+
+logger = logging.getLogger(__name__)
+
+# Largest Limit the service accepts in one QueryDeliveries call (zuseaa_p2.xsd: 1..1000)
+PAGE_SIZE = 1000
 
 
 def raise_on_error(response: Any, operation: str) -> None:
@@ -71,25 +77,55 @@ class Mailbox:
         """The zeep service proxy, for calling SOAP operations directly."""
         return self.connection.service
 
-    def deliveries(self, all: bool = True) -> Iterator[Delivery]:
-        # Not a generator itself, so that using a closed/unopened mailbox fails right here
-        return self._deliveries(self.connection, all)
+    def deliveries(self, all: bool = True, *, limit: int | None = None) -> Iterator[Delivery]:
+        """Yield the mailbox's deliveries: all of them, or only new (unread) ones.
 
-    def _deliveries(self, conn: USP_MP_Adapter.ConnectionContext, all: bool) -> Iterator[Delivery]:
-        if all:
-            deliveries_selector = self.uspmp.types.AllDeliveriesType(
-                Paging=self.uspmp.types.PagingType(Start=0, Limit=100)  # pyright: ignore[reportCallIssue]
-            )
-        else:
-            deliveries_selector = self.uspmp.types.NewDeliveriesOnlyType(Limit=100)  # pyright: ignore[reportCallIssue]
+        The delivery IDs are queried when this is called; each Delivery is then
+        fetched as the iterator reaches it. Because all IDs are collected up
+        front, closing or deleting deliveries while iterating is safe.
 
-        r = conn.service.QueryDeliveries(deliveries_selector, Version=self.uspmp.VERSION)
+        all=True pages through the whole mailbox. all=False can't be paged (the
+        service only offers a limit), so it returns at most 1000 deliveries and
+        logs a warning if there are more: close the processed ones and query
+        again. `limit` caps the number of deliveries returned.
+        """
+        if limit is not None and limit < 1:
+            raise ValueError(f"limit must be at least 1, not {limit}")
+        conn = self.connection  # fails right here if the mailbox isn't open
+        ids = self._all_ids(conn, limit) if all else self._new_ids(conn, limit)
+        return (Delivery(conn, delivery_id) for delivery_id in ids)
+
+    def _query(self, conn: USP_MP_Adapter.ConnectionContext, selector) -> tuple[int, list[str]]:
+        r = conn.service.QueryDeliveries(selector, Version=self.uspmp.VERSION)
         raise_on_error(r, "QueryDeliveries")
-        if r.ResultsList.HitCount == 0:
-            return
+        return r.ResultsList.HitCount, list(r.ResultsList.DeliveryID or [])
 
-        for delivery_id in r.ResultsList.DeliveryID:
-            yield Delivery(conn, delivery_id)
+    def _all_ids(self, conn: USP_MP_Adapter.ConnectionContext, limit: int | None) -> list[str]:
+        types = self.uspmp.types
+        ids: dict[str, None] = {}  # ordered set
+        start = 0
+        while limit is None or len(ids) < limit:
+            page_size = PAGE_SIZE if limit is None else min(PAGE_SIZE, limit - len(ids))
+            selector = types.AllDeliveriesType(Paging=types.PagingType(Start=start, Limit=page_size))  # pyright: ignore[reportCallIssue]
+            hit_count, page = self._query(conn, selector)
+            # A delivery arriving mid-paging shifts offsets and can repeat an ID; keep the first
+            ids.update(dict.fromkeys(page))
+            start += len(page)
+            if not page or start >= hit_count:
+                break
+        return list(ids)[:limit]
+
+    def _new_ids(self, conn: USP_MP_Adapter.ConnectionContext, limit: int | None) -> list[str]:
+        requested = PAGE_SIZE if limit is None else min(limit, PAGE_SIZE)
+        selector = self.uspmp.types.NewDeliveriesOnlyType(Limit=requested)  # pyright: ignore[reportCallIssue]
+        hit_count, ids = self._query(conn, selector)
+        if hit_count > len(ids) and (limit is None or len(ids) < limit):
+            logger.warning(
+                "%d new deliveries, but only %d returned (the service can't page new-only queries); "
+                "close the processed deliveries and query again for the rest",
+                hit_count, len(ids),
+            )
+        return ids
 
 
 class Attachment:
