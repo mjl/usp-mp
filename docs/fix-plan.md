@@ -12,6 +12,16 @@ These come from the bundled schemas and certificate, not from the live service:
 - **`strict=False` cause**: `ContactType` (`zuseaa_p2.xsd:145`) and `zuse_p2.xsd:674` reference the abstract `p:Person`, which `CorporateBody` replaces through an XSD substitution group. zeep's strict parser rejects the substitution.
 - **CA certificate**: `CN=BRZ-StammCA-2-02, O=Bundesrechenzentrum GmbH`, valid until **2038-01-12**. Rotation is not urgent, but it should still be documented.
 
+## Verified against the demo service (2026-11-17)
+
+Run with `tests/test_demo.py` and a real client certificate:
+
+- Paging behaves as the schema says: `Start`/`Limit` slices, `HitCount` is the total, and pages past the end are empty. New-only queries are capped by `Limit` (`HitCount` 3, `Limit` 1, one ID). This confirms the 2.3 design.
+- The service validates requests (`Limit` 0 or 1001 → `Validation error` fault), and it accepts zeep's `<Query xsi:type=…>` (B11).
+- Checksums: `SHA512` on all attachments, `bytes` values, and the declared `Size` matches.
+- Unknown UUIDs: `000` / "Unkown uuid." for get, close and delete. Unknown attachment: HTTP 400. Close and delete on known IDs return `Success`; the demo ignores them.
+- **4.2 matters more than planned:** with `strict=False`, `Sender`/`Receiver` `CorporateBody` and `AdditionalCriteria` are not parsed but left in `_raw_elements`, so 4.1's `sender`/`receiver` accessors cannot work until 4.2 is solved. With `strict=True`, `GetDelivery` fails on `CorporateBody`.
+
 ## Phase 0: Test scaffolding (first, so every later fix lands with a test) — done
 
 Implemented as planned, with two deviations: the fakes (`tests/fakes.py`) return real zeep objects built from the bundled WSDL rather than `SimpleNamespace` trees, and the README documents `uv run --no-project ... --with-editable '.[dev]' pytest` (no lock file or project venv). Known open bugs are captured as `xfail(strict=True)` tests. Writing `test_wsdl.py` surfaced critique B11 (query request shape).
@@ -159,6 +169,8 @@ On `Delivery`, add properties for the useful `MetaData` fields: `app_delivery_id
 Check the actual field shapes against demo data first, because the `Person`/`CorporateBody` substitution (see 4.2) affects how `sender` parses.
 
 ### 4.2 `strict=False` [S4]
+
+Confirmed on the demo service (see above): sender and receiver organisation data is currently lost, and the two `xfail` tests in `tests/test_demo.py` will flag when this is fixed. Do 4.2 before 4.1.
 
 1. Try a local schema patch: at `zuseaa_p2.xsd:145` and `zuse_p2.xsd:674`, replace `<xs:element ref="p:Person"/>` with `<xs:choice><xs:element ref="p:PhysicalPerson"/><xs:element ref="p:CorporateBody"/></xs:choice>`. Keep a `wsdl/PATCHES.md` that records the change and the reason, since the files are vendor copies.
 2. Run the demo integration test with `strict=True`. If it passes, switch to strict mode.

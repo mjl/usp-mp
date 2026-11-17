@@ -1,0 +1,237 @@
+{
+  "_comment": "Golden snapshot of the Mein Postkorb demo data; rewrite with pytest -m demo --update-demo-snapshot and review the diff.",
+  "recorded": "2026-11-17",
+  "endpoint": "https://demo-autoabholung.meinpostkorb.brz.gv.at",
+  "deliveries": [
+    {
+      "id": "434b7c88-b142-11ea-8973-c35ab5612797",
+      "new": true,
+      "timestamp": "2020-05-26T08:40:00+02:00",
+      "subject": "Test-Nachricht: 01",
+      "attachments": [
+        {
+          "id": "bae513b8-b141-11ea-9128-e3b5033f576c",
+          "filename": "mailbody",
+          "mimetype": "text/plain",
+          "size": 21,
+          "checksum": {
+            "algorithm": "SHA512",
+            "value": "a534978d7a242af574815eb923bb6c5a8bc0b58b35681c1b65c238a008aa1915b4a3d5ba157fe1c295873a0a7a21e3ff06ff8c2f896735ff46decababbd44d12"
+          }
+        },
+        {
+          "id": "bae81d60-b141-11ea-afb7-4f381e5f613d",
+          "filename": "Example.docx",
+          "mimetype": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+          "size": 33527,
+          "checksum": {
+            "algorithm": "SHA512",
+            "value": "7715a63a2ad0084c02abb30d19a01b18c247f71f6abf3d32e9061237bb2ee3400cb819a6ca071eefc185673f701c4a734103c8bff7a837829509cd41198092f5"
+          }
+        }
+      ]
+    },
+    {
+      "id": "434bcb20-b142-11ea-bd8d-c73912744e07",
+      "new": false,
+      "timestamp": "2020-05-26T08:40:00+02:00",
+      "subject": "Test-Nachricht: 02",
+      "attachments": [
+        {
+          "id": "bae56106-b141-11ea-b542-2bf347e05b72",
+          "filename": "mailbody",
+          "mimetype": "text/plain",
+          "size": 21,
+          "checksum": {
+            "algorithm": "SHA512",
+            "value": "43a2003626230ca3016f86f8125d3ea0e8a107e8246d6b1efd8d2c1a233ee08894bd1f0eeaa6c78f8780f3de6c7e77b458440f4e42a87e92ea77405a872bdd16"
+          }
+        },
+        {
+          "id": "bae86afe-b141-11ea-955f-cb40a7e7071e",
+          "filename": "Example.xlsx",
+          "mimetype": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          "size": 8945,
+          "checksum": {
+            "algorithm": "SHA512",
+            "value": "6981219554d2ada99def2e6514f64bbea5ab8a8f813c6beb5c1c0649d257df935671aaf56d139ad9332b9ef701f0605b8db36f7901e9de8ff33dc9b9df2aa2af"
+          }
+        }
+      ]
+    },
+    {
+      "id": "434c18a0-b142-11ea-87f1-eb357aa289dc",
+      "new": false,
+      "timestamp": "2020-05-26T08:40:00+02:00",
+      "subject": "Test-Nachricht: 03",
+      "attachments": [
+        {
+          "id": "bae5afd0-b141-11ea-8a48-3748f327b4a2",
+          "filename": "mailbody",
+          "mimetype": "text/plain",
+          "size": 21,
+          "checksum": {
+            "algorithm": "SHA512",
+            "value": "001fe53225c53d97af48c07775b045905f211704f6b7de28a10b5bd09b74a4ed07e2f87ede325bd98b33bdea5ce22a37617e78f37fcc37b4001db28900373ba1"
+          }
+        },
+        {
+          "id": "bae8b9aa-b141-11ea-a50d-475cdc4d30d2",
+          "filename": "Example.pdf",
+          "mimetype": "application/pdf",
+          "size": 13158,
+          "checksum": {
+            "algorithm": "SHA512",
+            "value": "8c59a32f9c3ec2a2ef3f0e0aed77768e530722808b1999a16333da461c44fa7a45cfc5e9feebc4b2258d24f9ee862dd07f1788a5f6d08899ed6dfca1d7f037b7"
+          }
+        }
+      ]
+    },
+    {
+      "id": "434c6800-b142-11ea-8da2-2bf0d7e660e0",
+      "new": false,
+      "timestamp": "2020-05-26T08:40:00+02:00",
+      "subject": "Test-Nachricht: 04",
+      "attachments": [
+        {
+          "id": "bae5fd8c-b141-11ea-91a1-9f84987cc076",
+          "filename": "mailbody",
+          "mimetype": "text/plain",
+          "size": 21,
+          "checksum": {
+            "algorithm": "SHA512",
+            "value": "844d8c213bdc449fc92fe5f19e71f283efb0e3ff66fc50795f926c2de8612b6f909e65c12cc7ed0c12e61aa567172aa7f0acf9a366eec2c6a333a1af889c3f3e"
+          }
+        },
+        {
+          "id": "bae90824-b141-11ea-a872-ab6ca777dad4",
+          "filename": "Example.jpg",
+          "mimetype": "image/jpeg",
+          "size": 9022,
+          "checksum": {
+            "algorithm": "SHA512",
+            "value": "d8818ddf8fce54e4d444eaea0b856a885bf4c3e406ac12109a34c496d9fba410cadcaa31c6aabb5acdd41809a3b99ba4e55571705543c69f1011a2892f43bebc"
+          }
+        },
+        {
+          "id": "bae955b8-b141-11ea-be2f-27f36663b903",
+          "filename": "Example.png",
+          "mimetype": "image/png",
+          "size": 2335,
+          "checksum": {
+            "algorithm": "SHA512",
+            "value": "e6b22584c4179afd7ffb0c60f97975dac988f9b913f387fbd2cb6f7f221d2ad87a361ef978cf82c9f977988528885c086907885c21a0a943ce71ec818199af9a"
+          }
+        }
+      ]
+    },
+    {
+      "id": "434cb5c6-b142-11ea-84ab-4fa381d9714a",
+      "new": true,
+      "timestamp": "2020-05-26T08:40:00+02:00",
+      "subject": "Test-Nachricht: 05",
+      "attachments": [
+        {
+          "id": "bae64b84-b141-11ea-b787-6f83804e0804",
+          "filename": "mailbody",
+          "mimetype": "text/plain",
+          "size": 21,
+          "checksum": {
+            "algorithm": "SHA512",
+            "value": "a719fca0f43ad5b44bcdba3381aa941c7b7942c63fa3d1b62ec2681d3c946169347e4b817a28eb7ba8f28e05ccdc18dc35ba67966cdfe9652b1f9803bc2e85f8"
+          }
+        }
+      ]
+    },
+    {
+      "id": "434d0422-b142-11ea-bd87-234fb2053efb",
+      "new": false,
+      "timestamp": "2020-05-26T08:40:00+02:00",
+      "subject": "Test-Nachricht: 06",
+      "attachments": [
+        {
+          "id": "bae698be-b141-11ea-85ef-374dbe4ddd22",
+          "filename": "mailbody",
+          "mimetype": "text/plain",
+          "size": 21,
+          "checksum": {
+            "algorithm": "SHA512",
+            "value": "c469fb390af971455c4af6973ebb0015234c815d1b043dc1edeae0aa0c6ee0c1342e78ab042f0e4932a615989e9f71c1d5f82fa5f42536fc0c47243014f178cb"
+          }
+        }
+      ]
+    },
+    {
+      "id": "434d5198-b142-11ea-be28-0be22abf1692",
+      "new": false,
+      "timestamp": "2020-05-26T08:40:00+02:00",
+      "subject": "Test-Nachricht: 07",
+      "attachments": [
+        {
+          "id": "bae6e65c-b141-11ea-97ea-bb00aa0c4c11",
+          "filename": "mailbody",
+          "mimetype": "text/plain",
+          "size": 21,
+          "checksum": {
+            "algorithm": "SHA512",
+            "value": "8f50fbf27cf74565ddb5042158054ec2516c221468e1a9238e629a531fac7205e8f068aff6515b418a8faeba4390b8e8a692589b8f9db4cd19b26a31bf4ae3b3"
+          }
+        }
+      ]
+    },
+    {
+      "id": "434d9f54-b142-11ea-8154-2b18dc446f09",
+      "new": false,
+      "timestamp": "2020-05-26T08:40:00+02:00",
+      "subject": "Test-Nachricht: 08",
+      "attachments": [
+        {
+          "id": "bae7335a-b141-11ea-a2ef-cb5ee7ae3679",
+          "filename": "mailbody",
+          "mimetype": "text/plain",
+          "size": 21,
+          "checksum": {
+            "algorithm": "SHA512",
+            "value": "4d33907ed2900d73668e9e5d75c1fe3dc44903bb64b2737745e03babc740658a861dc9350f3a0322428ca1927d8c05fd050c1b2d36b70706df324f729741b666"
+          }
+        }
+      ]
+    },
+    {
+      "id": "434ded4c-b142-11ea-b2d4-8b5dfd297ff7",
+      "new": false,
+      "timestamp": "2020-05-26T08:40:00+02:00",
+      "subject": "Test-Nachricht: 09",
+      "attachments": [
+        {
+          "id": "bae781de-b141-11ea-a0bf-5bd8899f60ca",
+          "filename": "mailbody",
+          "mimetype": "text/plain",
+          "size": 21,
+          "checksum": {
+            "algorithm": "SHA512",
+            "value": "b929d879b4821acc909e6a3f8146f63878756169419dc6ffb76ad462891327e2838253affbfb98b70e73eca5b8be60f00111ea9cd757351b1f114c53b88e3b50"
+          }
+        }
+      ]
+    },
+    {
+      "id": "434e3b9e-b142-11ea-a085-2b4acf5130c5",
+      "new": true,
+      "timestamp": "2020-05-26T08:40:00+02:00",
+      "subject": "Test-Nachricht: 10",
+      "attachments": [
+        {
+          "id": "bae7ce3c-b141-11ea-96cb-1b64632d8d13",
+          "filename": "mailbody",
+          "mimetype": "text/plain",
+          "size": 22,
+          "checksum": {
+            "algorithm": "SHA512",
+            "value": "0feebb37b88207026fe4cbeacbf78a640189808dd386d549a339d499c9b9f218b7274cd3b167ac430921b9ed5495610e302044e5c30c21537af9b80bf4df615f"
+          }
+        }
+      ]
+    }
+  ]
+}

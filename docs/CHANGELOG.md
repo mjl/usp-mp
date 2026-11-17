@@ -2,6 +2,12 @@
 
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/). The repository has no release tags; versions are the value of `usp_mp.__version__` at the time, and dates come from the git history.
 
+## [Unreleased]
+
+### Added
+
+- Demo-service test suite (`tests/test_demo.py`, marker `demo`): 36 tests against the Mein Postkorb TEST endpoint plus 2 strict `xfail` tests for the known `CorporateBody` parsing gap. Besides invariants, they compare the fixed demo data against the values documented in the vendor HowTo and against a golden snapshot (`tests/data/demo_snapshot.json`, re-recorded with `--update-demo-snapshot`). Each person running them provides their own client certificate and password via `--p12=` / `--p12-password-file=` / `--p12-password=` or `USP_MP_P12` / `USP_MP_P12_PASS_FILE` / `USP_MP_P12_PASS`; without a certificate they are skipped. See README "Tests against the demo service".
+
 ## [1.0.20261117] - 2026-11-17
 
 Changes since `1.0.20260224` (commits from 2026-04-16 to 2026-11-17).
