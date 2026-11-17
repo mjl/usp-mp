@@ -13,6 +13,7 @@ This library wraps the Austrian Government's "Unternehmensserviceportal — Mein
 - Activate _Autoabholung_ in _Mein Postkorb_ (by someone with role `Postbevollmächtigter`).
 - Generate and download a client certificate (.p12) in the Autoabholung section:
   "Settings" -> "Automatische Abholung" -> "Zertifikat erzeugen" (client)
+  The same page links the BRZ CA (server) certificate; it is already bundled with this library (see "Trust anchor" below), so you don't need to download it.
 - Keep the .p12 password; it is required by the client.
 
 ## Quick start (CLI)
@@ -217,7 +218,7 @@ The service's TLS certificate is verified only against the bundled BRZ root CA, 
 | Subject (= issuer, self-signed root) | `CN=BRZ-StammCA-2-02, OU=BRZ CA, O=Bundesrechenzentrum GmbH, C=AT` |
 | Valid | 2023-06-30 to **2038-01-12** |
 | SHA-256 fingerprint | `38:10:92:B4:EB:08:39:25:73:74:E4:10:5B:66:25:36:20:4D:98:81:94:4A:E7:DB:49:B0:8E:16:8A:8F:2E:A9` |
-| Source | Not recorded in this repository. Verify the fingerprint against BRZ before relying on a replacement. |
+| Source | USP *Mein Postkorb*: on the page where the client certificate is generated ("Settings" → "Automatische Abholung" → "Zertifikat erzeugen"), there is a download link for this CA (server) certificate. It is the same for all users. |
 
 Inspect it with:
 
@@ -227,7 +228,7 @@ openssl x509 -in src/usp_mp/certs/brz_ca.cer -noout -subject -issuer -dates -fin
 
 `tests/test_ca.py` checks the fingerprint and subject, fails once the certificate has expired, and warns a year before. Both demo and production endpoints chain to it; the demo test suite exercises that.
 
-**If BRZ moves to a new root** (TLS errors like `certificate verify failed` while everything else is unchanged), replace `brz_ca.cer` with the new root in PEM form, verify its fingerprint through a trustworthy BRZ channel, and update this table and `tests/test_ca.py`. This is unrelated to your own client certificate (`.p12`), which has its own expiry; the library warns 30 days before that one.
+**If BRZ moves to a new root** (TLS errors like `certificate verify failed` while everything else is unchanged), download the current CA file from the same USP page, check that it is a root certificate in PEM form, replace `brz_ca.cer`, and update this table and `tests/test_ca.py`. This is unrelated to your own client certificate (`.p12`), which has its own expiry; the library warns 30 days before that one.
 
 ### Notes
 

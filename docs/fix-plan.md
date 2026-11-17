@@ -203,7 +203,7 @@ As planned, plus a WARNING for a client certificate expiring within 30 days (or 
 
 Decided: BSD 3-Clause. Originally considered: MIT (simplest), Apache-2.0 (patent grant), or EUPL-1.2 (common for Austrian/EU public-sector-adjacent software). Then add `LICENSE` and set `license = "<SPDX id>"` plus `license-files = ["LICENSE"]` in `pyproject.toml`. That PEP 639 form needs `setuptools>=77`, so bump `build-system.requires` to match.
 
-### 5.3 CA certificate documentation [P3] — done, except the source
+### 5.3 CA certificate documentation [P3] — done
 
 Add a "Trust anchor" section to `docs/howto.md` with the subject, issuer, SHA-256 fingerprint and expiry (2038-01-12), where it was obtained, and how to refresh it. Include the inspection command:
 
@@ -212,7 +212,7 @@ openssl x509 -in src/usp_mp/certs/brz_ca.cer -noout -subject -issuer -enddate -f
 ```
 
 Add a test that **warns** (does not fail) when the certificate expires within a year. A failing date-based test would be a time bomb.
-**Open question:** the source of `brz_ca.cer` isn't recorded anywhere in the repo; fill it in when known.
+~~**Open question:** the source of `brz_ca.cer`.~~ Answered: the CA download link on the USP page where the client certificate is generated.
 
 ### 5.4 Versioning [P4] — decided: keep the current scheme
 
@@ -252,4 +252,4 @@ After each PR, update `critique.md` status markers and `CHANGELOG.md`.
 4. ~~Which licence (5.2)?~~ Decided: BSD 3-Clause.
 5. ~~Which versioning scheme (5.4)?~~ Decided: keep `1.0.YYYYMMDD`.
 6. ~~Keep or remove the vendor documents (5.5)?~~ Decided: keep, with an origin note.
-7. Where did `brz_ca.cer` come from (5.3)?
+7. ~~Where did `brz_ca.cer` come from (5.3)?~~ The CA download link on the USP certificate-generation page.

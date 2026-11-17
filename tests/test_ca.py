@@ -1,5 +1,7 @@
 """The bundled BRZ CA certificate (the trust anchor for the service's TLS certificate).
 
+Downloaded from the link on the USP Mein Postkorb page where client
+certificates are generated ("Automatische Abholung" -> "Zertifikat erzeugen").
 docs/howto.md, "Trust anchor", documents these values. If the certificate is
 ever replaced, update both together.
 """
