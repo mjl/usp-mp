@@ -24,6 +24,9 @@ dev = [
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+markers = [
+    "demo: integration tests against the demo service (need USP_MP_P12 and USP_MP_P12_PASS)",
+]
 
 [build-system]
 requires = ["setuptools>=64.0"]

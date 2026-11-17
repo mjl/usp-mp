@@ -13,7 +13,7 @@ Changes since `1.0.20260224` (the version number has not been bumped; commits da
 - Installation instructions in `README.md`.
 - `docs/critique.md`: project review with status of each finding.
 - `docs/fix-plan.md`: phased plan for the open critique items.
-- First test suite, `tests/test_adapter_tls.py`: mutual-TLS tests against a local HTTPS server (run with pytest; `[tool.pytest.ini_options]` added).
+- Test suite (run with `pytest`; see README "Development"): an in-memory fake of the service built from the bundled WSDL; tests for `Mailbox`/`Delivery`/`Attachment`, the CLI, the WSDL and request XML, imports, and client-certificate TLS; strict `xfail` tests for known open bugs; and opt-in, read-only tests against the demo service (`pytest -m demo` with `USP_MP_P12`/`USP_MP_P12_PASS`).
 
 ### Changed
 
