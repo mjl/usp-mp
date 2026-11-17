@@ -16,6 +16,7 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/). The repo
 
 ### Changed
 
+- Package metadata: a real description instead of the template placeholder, plus keywords and classifiers.
 - CLI: library warnings are shown as `uspmp: warning: …`; `--debug` adds the library's debug output to the SOAP traces.
 - The `uspmp` listing shows each delivery's sender (`… from Bundeskanzleramt`).
 - `USP_MP_Adapter` parses the WSDL once per adapter (`load_wsdl()`, replacing `read_wsdl_types()`) and its connections reuse it. `adapter.types` is now a per-adapter frozen `QueryTypes` instead of a class-level object shared by all adapters. The `strict=False` workaround is documented with its cause and side effect.

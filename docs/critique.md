@@ -32,7 +32,7 @@ The plan for fixing every open item is in [fix-plan.md](fix-plan.md); its "Facts
 
 ## Design
 
-All **[open]** unless marked.
+All fixed.
 
 - **[fixed] Zeep client built twice.** The adapter now parses the WSDL once (`USP_MP_Adapter.load_wsdl`), and every connection's zeep client reuses that `Document` with its own transport and session. Previously each mailbox parsed it twice (about 20 ms each).
 - **[fixed] `self.service = None` then `assert connection.service` everywhere.** `ConnectionContext.service` is now a property that is always set and raises `RuntimeError` once the connection is closed; the asserts are gone.
@@ -48,7 +48,7 @@ All **[open]** unless marked.
 - **[fixed] README "Installation"** section is filled in. It uses a `<repository-url>` placeholder on purpose, because the origin remote is private.
 - **[fixed] `.gitignore`** rewritten: stray `:` and merged pattern removed; the blanket `.*` rule (which would have hidden e.g. `.github/`) and unused template sections dropped; `.jj/` added; `*.cer` no longer blocks the bundled CA cert (`!src/usp_mp/certs/*.cer`).
 - **[fixed] Typos and naming** ("ist not a directory", "rom private_key", "instanciate", "Mein Postfach", "Unternehmer-Service-Portal", "Postbevollmaechtigter", "return" → "returns", "meta data").
-- **[open]** `description = "Add your description here"` in `pyproject.toml` is still the template placeholder.
+- **[fixed]** `description = "Add your description here"` in `pyproject.toml` was the template placeholder. Now a real description, plus `keywords` and `classifiers` (Python 3.11–3.14, typed, beta). No `[project.urls]`, since the repository is private.
 - **[fixed]** No licence file. Now BSD 3-Clause: `LICENSE`, plus `license = "BSD-3-Clause"` and `license-files` in `pyproject.toml` (PEP 639, so `setuptools>=77`); the built wheel and sdist both carry it.
 - **[open]** `brz_ca.cer` is pinned and shipped with no note on source, fingerprint or expiry. It is `CN=BRZ-StammCA-2-02, O=Bundesrechenzentrum GmbH`, valid until **2038-01-12**, so rotation is not urgent; still document its details, origin, and how to refresh it.
 - **[won't fix]** Version `1.0.YYYYMMDD` mixes semver and CalVer and is hand-edited (now `1.0.20261117`; the CHANGELOG lists breaking changes explicitly). Keeping the scheme is a maintainer decision (2026-11-17); remember to bump `__version__` and rename the CHANGELOG's *Unreleased* heading when releasing.

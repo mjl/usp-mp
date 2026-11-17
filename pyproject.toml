@@ -1,7 +1,22 @@
 [project]
 name = "usp-mp"
 dynamic = ["version"]
-description = "Add your description here"
+description = "Client for the Mein Postkorb automatic retrieval (Automatische Abholung) service of the Austrian Unternehmensserviceportal (USP)"
+keywords = ["USP", "Unternehmensserviceportal", "Mein Postkorb", "Automatische Abholung", "e-Zustellung", "Austria", "SOAP"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Communications",
+    "Topic :: Office/Business",
+    "Typing :: Typed",
+]
 readme = "README.md"
 license = "BSD-3-Clause"
 license-files = ["LICENSE"]

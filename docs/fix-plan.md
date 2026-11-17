@@ -195,7 +195,7 @@ As planned, plus a WARNING for a client certificate expiring within 30 days (or 
 
 ## Phase 5: Packaging, licence and docs
 
-### 5.1 Project description [P1]
+### 5.1 Project description [P1] — done (without `[project.urls]`: the repository is private)
 
 `pyproject.toml`: `description = "Client for the Austrian USP 'Mein Postkorb' automatic retrieval (Automatische Abholung) service"`. Also add `keywords`, `classifiers` (Python 3.11–3.14, OS-independent) and `[project.urls]` if the repository should be public.
 
