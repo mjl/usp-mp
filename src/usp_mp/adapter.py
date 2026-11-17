@@ -1,6 +1,8 @@
 
 import os
 import secrets
+from dataclasses import dataclass
+from typing import Any
 import ssl
 import tempfile
 from urllib.parse import urljoin
@@ -17,7 +19,7 @@ from zeep import Client, Settings
 
 from .errors import CertificateError, MailboxStateError
 from zeep.transports import Transport
-from zeep.xsd.types.base import Type as ZeepBaseType
+from zeep.wsdl import Document
 
 
 class SSLContextAdapter(HTTPAdapter):
@@ -47,7 +49,21 @@ def _write_private_file(path: str, data: bytes) -> None:
         f.write(data)
 
 
+@dataclass(frozen=True)
+class QueryTypes:
+    """zeep types for building QueryDeliveries selectors, resolved from the bundled WSDL."""
+
+    AllDeliveriesType: Any
+    PagingType: Any
+    NewDeliveriesOnlyType: Any
+
+
 class USP_MP_Adapter:
+    """Certificate, TLS context and parsed WSDL for one Mein Postkorb endpoint.
+
+    Not thread-safe: a connection's requests.Session and zeep client must not be
+    shared between threads. Use one Mailbox (and so one adapter) per thread.
+    """
 
     DEMO_ENDPOINT_URL = "https://demo-autoabholung.meinpostkorb.brz.gv.at"
     PROD_ENDPOINT_URL = "https://autoabholung.meinpostkorb.brz.gv.at"
@@ -56,12 +72,6 @@ class USP_MP_Adapter:
     WSDL_PATH = os.path.join(os.path.dirname(__file__), 'wsdl', 'zuseaa_p2.wsdl')
     CA_PATH = os.path.join(os.path.dirname(__file__), 'certs', 'brz_ca.cer')
     TIMEOUT = 10
-
-    class ParamTypes:
-        AllDeliveriesType: type[ZeepBaseType]
-        PagingType: type[ZeepBaseType]
-        NewDeliveriesOnlyType: type[ZeepBaseType]
-    types = ParamTypes()
 
     def __init__(self, p12_path: str, p12_pass: str|None=None, *, prod: bool=False) -> None:
         self.endpoint = self.PROD_ENDPOINT_URL if prod else self.DEMO_ENDPOINT_URL
@@ -75,21 +85,30 @@ class USP_MP_Adapter:
         self.ssl_context = self.build_ssl_context(private_key, cert)
         del private_key  # only the SSLContext keeps the key from here on
 
-        # Read in types from wsdl. Not strictly needed, but adds some sanity checks
-        self.read_wsdl_types()
+        # Parsed once per adapter; every connection's zeep client reuses it
+        self.settings = self.zeep_settings(self.headers)
+        self.wsdl, self.types = self.load_wsdl(self.settings)
 
-    def read_wsdl_types(self) -> None:
-        """Extract type proxies from wsdl definition file"""
+    @staticmethod
+    def zeep_settings(headers: dict[str, str]) -> Settings:
+        # strict=False: zeep can't parse the CorporateBody substitution for p:Person in
+        # Sender/Receiver (strict=True fails GetDelivery with "Unexpected element
+        # ...CorporateBody, expected ...Person"). Side effect: CorporateBody ends up unparsed
+        # in _raw_elements. See docs/critique.md S4 / fix-plan 4.2.
+        # zeep reads `strict` from the settings the WSDL Document was parsed with.
+        return Settings(strict=False, extra_http_headers=headers)  # pyright: ignore[reportCallIssue]
 
-        client = Client(wsdl=self.WSDL_PATH)
+    @classmethod
+    def load_wsdl(cls, settings: Settings | None = None) -> tuple[Document, QueryTypes]:
+        """Parse the bundled WSDL (the service doesn't serve ?wsdl) and resolve the query types."""
+        client = Client(wsdl=cls.WSDL_PATH, settings=settings)  # local files only, no network
         if not client.wsdl.services:
             raise ValueError("No services found in WSDL")
-
-        for type_name in ('AllDeliveriesType', 'PagingType', 'NewDeliveriesOnlyType'):
-            t = client.get_type(f'ns0:{type_name}')
-            if t is None:
-                raise ValueError(f"Could not resolve type {type_name} in WSDL")
-            setattr(self.types, type_name, t)
+        types = QueryTypes(**{
+            name: client.get_type(f'ns0:{name}')
+            for name in ('AllDeliveriesType', 'PagingType', 'NewDeliveriesOnlyType')
+        })
+        return client.wsdl, types
 
     def load_p12_cert(self, p12_path: str, p12_pass: str|None = None):
         """Load PKCS12 and extract certificate and private key; raises CertificateError"""
@@ -159,16 +178,10 @@ class USP_MP_Adapter:
             transport = Transport(session=self.session, timeout=uspmp.TIMEOUT, operation_timeout=uspmp.TIMEOUT)
             # After Transport(): zeep overwrites the session's User-Agent with its own
             self.session.headers.update(uspmp.headers)
-            # Note: strict=True throws Exception for GetDelivery()
-            # zeep.exceptions.XMLParseError: Unexpected element '{http://reference.e-government.gv.at/namespace/persondata/phase2/20181206#}CorporateBody', expected '{http://reference.e-government.gv.at/namespace/persondata/phase2/20181206#}Person'
-            # I don't really care…
-            settings = Settings(strict=False, extra_http_headers=uspmp.headers)  # pyright: ignore[reportCallIssue]
 
-            # We can't get the wsdl from the well known endpoint ?wsdl, load wsdl from local file
-            self.client = Client(wsdl=uspmp.WSDL_PATH, transport=transport, settings=settings)
-
-            # we already checked that client bindings contains services
-            binding = list(self.client.wsdl.bindings.keys())[0]
+            # Reuses the adapter's parsed WSDL; SOAP calls go through this connection's transport
+            self.client = Client(wsdl=uspmp.wsdl, transport=transport, settings=uspmp.settings)
+            binding = next(iter(self.client.wsdl.bindings))  # load_wsdl checked there is one
             self._service = self.client.create_service(binding, uspmp.soap_endpoint)
 
         def _ensure_open(self) -> None:

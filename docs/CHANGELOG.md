@@ -13,6 +13,7 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/). The repo
 
 ### Changed
 
+- `USP_MP_Adapter` parses the WSDL once per adapter (`load_wsdl()`, replacing `read_wsdl_types()`) and its connections reuse it. `adapter.types` is now a per-adapter frozen `QueryTypes` instead of a class-level object shared by all adapters. The `strict=False` workaround is documented with its cause and side effect.
 - **`uspmp --save` layout:** each delivery is saved into a directory named by its delivery ID instead of its position in the listing (`0/`, `1/`, …). Files are written atomically via a `.part` file.
 - `Mailbox.deliveries()` queries the delivery IDs when called (previously on first iteration); each delivery is still fetched lazily.
 - Error types and messages: certificate problems raise `CertificateError` (previously `RuntimeError("Failed to initialize USP_MP_Adapter: …")`, or `ssl.SSLError`/`ValueError` from the adapter); API errors raise `ApiError` with messages like `GetDelivery failed: [000] Unkown uuid.`; checksum problems raise `ChecksumError`; using a closed or unopened mailbox raises `MailboxStateError`. The previous builtin types still match (`ApiError` and `ChecksumError` are `ValueError`s, `MailboxStateError` is a `RuntimeError`), except for certificate errors. The CLI prefixes unexpected (non-`usp_mp`) errors with their type.

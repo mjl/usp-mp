@@ -151,7 +151,9 @@ Check during implementation: when `session.verify` is a path, requests also pass
 
 **Tests:** after adapter construction no temp files remain (patch `tempfile.mkdtemp` to a known dir); a failure inside `load_cert_chain` still removes the directory.
 
-### 3.2 Build the zeep client once [D1, D2, D3] — partly done
+### 3.2 Build the zeep client once [D1, D2, D3] — done
+
+**Remainder done:** the adapter parses the WSDL once into a zeep `Document` (parsed with the `strict=False` settings, because zeep reads `strict` from the Document's settings), and each connection creates a lightweight `Client(wsdl=document, transport=…)` around its own session. `types` is a per-adapter frozen `QueryTypes` dataclass; the class-level `ParamTypes` is gone. Thread safety is documented in the class docstring and the howto.
 
 **Done (decision (b), 2026-11-17):** `Mailbox` is a mandatory context manager (`with Mailbox(...) as mbox:`) that owns one connection, so the SOAP client is built once per mailbox. `ConnectionContext.service` is a property that is always set and raises when closed, and the asserts are gone. Since the CLI was the only caller, breaking the API was acceptable. **Still open:** the bullets on dropping the separate `read_wsdl_types` parse and making `types` per instance, plus the thread-safety note.
 
@@ -161,7 +163,7 @@ Check during implementation: when `session.verify` is a path, requests also pass
 - ~~Keep `connection()`, or make `Mailbox` a context manager?~~ Decided: `Mailbox` as a **mandatory** context manager (option (b)); `connection()` remains as the building block underneath.
 - Document that an adapter is not thread-safe (one per thread).
 
-### 3.3 N+1 round trips [B5]
+### 3.3 N+1 round trips [B5] — done (documented)
 
 This is inherent to the API: one `GetDelivery` per ID. After 2.3, the IDs are fetched eagerly and each `Delivery` is fetched lazily on iteration. That's acceptable, so just document it. If it matters later, `Delivery` could defer `GetDelivery` until the first property access.
 

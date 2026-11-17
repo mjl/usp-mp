@@ -227,6 +227,32 @@ def test_soap_call_presents_client_certificate(adapter, start_server):
     assert data["user_agent"].startswith("USP_MP/")
 
 
+def test_wsdl_parsed_once_per_adapter(adapter, monkeypatch):
+    """Connections reuse the adapter's parsed WSDL instead of parsing it again."""
+    import zeep.wsdl.wsdl as zeep_wsdl
+
+    parses = []
+    original_init = zeep_wsdl.Document.__init__
+    monkeypatch.setattr(zeep_wsdl.Document, "__init__",
+                        lambda self, *a, **kw: parses.append(a[0]) or original_init(self, *a, **kw))
+
+    with adapter.connection() as first, adapter.connection() as second:
+        assert first.client.wsdl is adapter.wsdl
+        assert second.client.wsdl is adapter.wsdl
+        assert first.client.transport is not second.client.transport  # own session each
+
+    assert parses == []
+
+
+def test_adapters_have_independent_types(pki, monkeypatch):
+    monkeypatch.setattr(USP_MP_Adapter, "CA_PATH", pki["ca"])
+    a = USP_MP_Adapter(pki["p12"], P12_PASSWORD)
+    b = USP_MP_Adapter(pki["p12"], P12_PASSWORD)
+
+    assert a.types is not b.types
+    assert a.wsdl is not b.wsdl
+
+
 def test_connection_unusable_after_close(adapter, start_server):
     port = start_server()
     adapter.attachment_endpoint = f"https://localhost:{port}/attachment"

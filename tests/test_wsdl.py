@@ -66,10 +66,24 @@ def test_new_deliveries_request_shape(wsdl_client):
     assert query.findtext(f"{{{NS}}}Limit") == "100"
 
 
-def test_adapter_reads_types_from_wsdl():
-    """USP_MP_Adapter.read_wsdl_types works without certificate or network."""
-    adapter = USP_MP_Adapter.__new__(USP_MP_Adapter)  # skip __init__: no .p12 needed
-    adapter.read_wsdl_types()
+def test_load_wsdl_resolves_types():
+    """USP_MP_Adapter.load_wsdl works without certificate or network."""
+    document, types = USP_MP_Adapter.load_wsdl(USP_MP_Adapter.zeep_settings({}))
 
+    assert document.services
     for name in ("AllDeliveriesType", "PagingType", "NewDeliveriesOnlyType"):
-        assert getattr(adapter.types, name) is not None
+        assert getattr(types, name) is not None
+    assert document.settings.strict is False
+
+
+def test_query_types_are_immutable():
+    import dataclasses
+
+    _, types = USP_MP_Adapter.load_wsdl()
+    with pytest.raises(dataclasses.FrozenInstanceError):
+        types.PagingType = None
+
+
+def test_no_class_level_types():
+    """Query types used to live in one class-level object that every adapter wrote into."""
+    assert not hasattr(USP_MP_Adapter, "types")

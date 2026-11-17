@@ -67,6 +67,8 @@ with Mailbox(p12_path, p12_pass, prod=False) as mbox:
 - Calling `deliveries()` outside a `with` block, or after it ended, raises `MailboxStateError`.
 - After the block, `Delivery` and `Attachment` objects keep their already-fetched data (subject, file names, …), but anything that contacts the service (`content()`, `close()`, `delete()`) raises `MailboxStateError`.
 - A `Mailbox` can be opened only once; create a new one for another session. `mbox.close()` closes it early and is safe to call more than once.
+- A `Mailbox` is not thread-safe. Use one per thread.
+- Each delivery costs one `GetDelivery` request, made when the iteration reaches it, so N deliveries take N+1 requests including the query. The service offers no batch call.
 
 `Mailbox.deliveries()` yields `Delivery` objects.
 
