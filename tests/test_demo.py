@@ -441,6 +441,8 @@ def test_cli_lists_and_saves(demo_credentials, monkeypatch, capsys, tmp_path, de
     saved = [p for p in tmp_path.rglob("*") if p.is_file()]
     assert len(saved) == sum(len(list(d.attachments())) for d in deliveries)
     assert all(p.stat().st_size > 0 for p in saved)
+    assert sorted(p.name for p in tmp_path.iterdir()) == sorted(HOWTO_ALL_IDS)  # one directory per delivery ID
+    assert (tmp_path / HOWTO_ATTACHMENT_EXAMPLE[0] / "1_example.pdf").read_bytes().startswith(b"%PDF-")
 
 
 def test_cli_rejects_wrong_password(demo_credentials, capsys):

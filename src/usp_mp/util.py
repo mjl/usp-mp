@@ -1,4 +1,4 @@
-"""Helpers for turning server-supplied attachment names into safe local file names."""
+"""Helpers for saving attachments: safe local file names, unique paths, atomic writes."""
 
 from __future__ import annotations
 
@@ -39,6 +39,21 @@ def sanitize_filename(name: str, mime: str) -> str:
     if original_ext and mimetypes.guess_type(f"x{original_ext}", strict=False)[0] == mime:
         return stem + original_ext
     return stem + (mimetypes.guess_extension(mime, strict=False) or original_ext)
+
+
+def write_atomic(path: Path | str, data: bytes) -> None:
+    """Write `data` to `path` so that `path` is either the old file or the complete new one.
+
+    The bytes go to ``<path>.part`` first, which is then renamed over `path`.
+    A crash leaves at most a ``.part`` file behind, never a truncated `path`.
+    """
+    path = Path(path)
+    part = path.with_name(path.name + ".part")
+    with open(part, "wb") as f:
+        f.write(data)
+        f.flush()
+        os.fsync(f.fileno())
+    os.replace(part, path)
 
 
 def unique_path(directory: Path | str, filename: str) -> Path:

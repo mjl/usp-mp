@@ -29,7 +29,7 @@ Options:
 
 - `--client-certificate` path to the `.p12` file (required)
 - `--all` fetch all (not just new) deliveries
-- `--save` save attachments under `--download` (default: current directory) and mark each saved delivery as read
+- `--save` save attachments under `--download` (default: current directory), one directory per delivery named by its delivery ID, files as `<index>_<sanitized name>`; each saved delivery is then marked as read. Files are written atomically (via a `.part` file), and re-running into the same directory refreshes the files instead of failing
 - `--prod` use production endpoint (default: demo)
 - `--debug` trace SOAP calls and show full tracebacks on errors
 

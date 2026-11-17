@@ -7,6 +7,7 @@ from pathlib import Path
 
 from usp_mp.errors import UspMpError
 from usp_mp.mail import Mailbox
+from usp_mp.util import write_atomic
 
 def setup_logging():
     logging.config.dictConfig({
@@ -119,9 +120,11 @@ def process(args: argparse.Namespace, dest: Path, p12_pass: str) -> None:
 def process_delivery(args: argparse.Namespace, dest: Path, post_idx: int, delivery) -> None:
     print(f"[{post_idx:02}] {delivery.delivery_ts} {delivery}")
 
-    save_path = dest / str(post_idx)
+    # One directory per delivery, named by its ID: stable across runs, so re-running
+    # (e.g. with --all) refreshes the same files instead of failing or mixing deliveries
+    save_path = dest / delivery.id
     if args.save:
-        save_path.mkdir(exist_ok=False)
+        save_path.mkdir(exist_ok=True)
 
     for att_idx, attachment in enumerate(delivery.attachments()):
         print(f"   [{att_idx:02}] {attachment} {attachment.mimetype}")
@@ -133,8 +136,7 @@ def process_delivery(args: argparse.Namespace, dest: Path, post_idx: int, delive
             print("     -----")
         if args.save:
             fname = save_path / f"{att_idx}_{attachment.sanitized_filename}"
-            with open(fname, 'wb') as f:
-                f.write(b)
+            write_atomic(fname, b)
             print("        Saved as", fname)
 
     if args.save:  # Only mark as read if saved

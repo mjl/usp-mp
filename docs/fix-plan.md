@@ -121,7 +121,7 @@ Implemented as below, with warning-only for new-only truncation (maintainer deci
 
 **Tests:** fake service returning 2,500 IDs over three pages; `HitCount=0`; an inconsistent `HitCount` (larger than what is ever returned) stops on an empty page; new-only truncation logs a warning.
 
-### 2.4 `--save` directory naming [B8]
+### 2.4 `--save` directory naming [B8] — done
 
 `cli.py`: `save_path = dest / delivery.id` with `mkdir(exist_ok=True)`. Write to `name.part` and rename on completion, so a crash never leaves a half-written file that looks finished. Print the index for display only.
 This changes the on-disk layout, so add a CHANGELOG entry.

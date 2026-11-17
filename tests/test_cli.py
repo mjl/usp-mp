@@ -50,8 +50,9 @@ def test_save_writes_attachments_and_marks_read(tmp_path, cert, fake_adapters, s
     assert run_cli("--client-certificate", cert, "--client-password", "",
                    "--save", "--download", str(out_dir)) == 0
 
-    assert (out_dir / "0" / "0_mailbody.txt").read_bytes() == b"Mail body 1\n"
+    assert (out_dir / fake.delivery_id / "0_mailbody.txt").read_bytes() == b"Mail body 1\n"
     assert fake.read
+    assert not list(out_dir.rglob("*.part"))
 
 
 def test_non_utf8_mail_body_is_printed(capsys, cert, fake_adapters, service):
@@ -203,12 +204,31 @@ def test_sys_argv_is_used_by_default(monkeypatch, cert, fake_adapters, service):
     assert cli.main() == 0
 
 
-@pytest.mark.xfail(strict=True, reason="critique B8: a second --save run into the same directory fails")
 def test_save_twice_into_same_directory(tmp_path, cert, fake_adapters, service):
-    service.add_delivery()
+    """Critique B8: the second run used to fail on the existing directory 0/."""
+    fake = service.add_delivery()
     out_dir = tmp_path / "out"
     out_dir.mkdir()
     args = ("--client-certificate", cert, "--client-password", "", "--save", "--download", str(out_dir))
 
     assert run_cli(*args) == 0
     assert run_cli(*args, "--all") == 0
+
+    assert [p.name for p in out_dir.iterdir()] == [fake.delivery_id]
+    assert (out_dir / fake.delivery_id / "0_mailbody.txt").read_bytes() == b"Mail body 1\n"
+
+
+def test_save_directories_are_per_delivery_id(tmp_path, cert, fake_adapters, service):
+    """A later run with a different set of deliveries never mixes them up."""
+    first = service.add_delivery()
+    out_dir = tmp_path / "out"
+    out_dir.mkdir()
+    args = ("--client-certificate", cert, "--client-password", "", "--save", "--download", str(out_dir))
+
+    run_cli(*args)          # saves and closes `first`
+    second = service.add_delivery()
+    run_cli(*args)          # new-only: just `second`, which was index 0 again
+
+    assert sorted(p.name for p in out_dir.iterdir()) == sorted([first.delivery_id, second.delivery_id])
+    assert (out_dir / second.delivery_id / "0_mailbody.txt").read_bytes() == b"Mail body 2\n"
+    assert (out_dir / first.delivery_id / "0_mailbody.txt").read_bytes() == b"Mail body 1\n"
