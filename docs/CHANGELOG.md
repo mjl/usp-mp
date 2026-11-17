@@ -2,6 +2,13 @@
 
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/). The repository has no release tags; versions are the value of `usp_mp.__version__` at the time, and dates come from the git history.
 
+## [Unreleased]
+
+### Changed
+
+- Dependency floors: `zeep>=4.3.3` (was `>=4.2`, which fails on Python 3.13+ and lacks the fix for GHSA-4cc2-g9w2-fhf6), `cryptography>=48.0.1` (was `>=41`; fixes the vulnerable OpenSSL in the wheels, GHSA-537c-gmf6-5ccf), and `lxml>=6.1.1`, now declared because `mail.py` imports it (CVE-2026-41066). The tests pass with exactly these versions, together with `requests` 2.32.4 and `urllib3` 2.8.0, on Python 3.11 and 3.14.
+- Removed the unused `pytest-mock` from the `dev` extra.
+
 ## [1.2.20261117] - 2026-11-17
 
 Changes since `1.1.20261117`.

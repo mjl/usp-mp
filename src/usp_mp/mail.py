@@ -8,7 +8,7 @@ import logging
 from dataclasses import dataclass
 from datetime import date, datetime
 
-from lxml import etree
+from lxml import etree  # pyright: ignore[reportAttributeAccessIssue]  # compiled module, no stubs
 from zeep.xsd.valueobjects import CompoundValue
 
 from .adapter import USP_MP_Adapter
