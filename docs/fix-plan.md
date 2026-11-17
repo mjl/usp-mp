@@ -44,7 +44,7 @@ Consider a separate, longer read timeout for large attachments: `timeout=(10, 60
 
 **Tests:** SHA256 match, SHA512 match, mismatch raises, unknown algorithm raises.
 
-### 1.3 Builtin shadowing [B6]
+### 1.3 Builtin shadowing [B6] — decided: leave `all=` as is
 
 - `hash` (local): fixed by 1.2.
 - `all` (parameter of `Mailbox.deliveries`): this is **public API**, used in the docs and the CLI. The shadowing is local and harmless, so the recommendation is to leave it. If you want it gone, add `new_only: bool = False` and keep `all=` working with a `DeprecationWarning` for one release. **Decision needed** (see the end of this plan).
@@ -220,7 +220,7 @@ After each PR, update `critique.md` status markers and `CHANGELOG.md`.
 
 ## Decisions needed from the maintainer
 
-1. Keep `deliveries(all=...)`, or rename it to `new_only` with a deprecation (1.3)?
+1. ~~Keep `deliveries(all=...)`, or rename it to `new_only` with a deprecation (1.3)?~~ Decided: keep it.
 2. Eventually remove the literal `--client-password` value (1.4)?
 3. Keep `connection()`, or move to `Mailbox` as a context manager (3.2)?
 4. Which licence (5.2)?
