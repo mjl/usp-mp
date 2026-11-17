@@ -2,7 +2,11 @@
 
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/). The repository has no release tags; versions are the value of `usp_mp.__version__` at the time, and dates come from the git history.
 
-## [Unreleased]
+## [1.2.20261117] - 2026-11-17
+
+Changes since `1.1.20261117`.
+
+**Possibly breaking:** the new dependency floors (`requests>=2.32.4`, `urllib3>=2.8.0`) can conflict with environments pinned to older versions.
 
 ### Added
 
