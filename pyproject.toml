@@ -6,7 +6,7 @@ readme = "README.md"
 authors = [
     { name = "Martin J. Laubach", email = "mjl@laubach.at" }
 ]
-requires-python = ">=3.14"
+requires-python = ">=3.11"
 dependencies = [
     "zeep>=4.2",
     "requests>=2",
