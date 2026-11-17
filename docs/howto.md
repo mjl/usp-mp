@@ -208,6 +208,27 @@ https://autoabholung.meinpostkorb.brz.gv.at/attachment?delivery_id=<uuid>&attach
 
 The response `Content-Type` is the attachment MIME type.
 
+### Trust anchor
+
+The service's TLS certificate is verified only against the bundled BRZ root CA, `src/usp_mp/certs/brz_ca.cer`, not against the system trust store:
+
+| | |
+|---|---|
+| Subject (= issuer, self-signed root) | `CN=BRZ-StammCA-2-02, OU=BRZ CA, O=Bundesrechenzentrum GmbH, C=AT` |
+| Valid | 2023-06-30 to **2038-01-12** |
+| SHA-256 fingerprint | `38:10:92:B4:EB:08:39:25:73:74:E4:10:5B:66:25:36:20:4D:98:81:94:4A:E7:DB:49:B0:8E:16:8A:8F:2E:A9` |
+| Source | Not recorded in this repository. Verify the fingerprint against BRZ before relying on a replacement. |
+
+Inspect it with:
+
+```bash
+openssl x509 -in src/usp_mp/certs/brz_ca.cer -noout -subject -issuer -dates -fingerprint -sha256
+```
+
+`tests/test_ca.py` checks the fingerprint and subject, fails once the certificate has expired, and warns a year before. Both demo and production endpoints chain to it; the demo test suite exercises that.
+
+**If BRZ moves to a new root** (TLS errors like `certificate verify failed` while everything else is unchanged), replace `brz_ca.cer` with the new root in PEM form, verify its fingerprint through a trustworthy BRZ channel, and update this table and `tests/test_ca.py`. This is unrelated to your own client certificate (`.p12`), which has its own expiry; the library warns 30 days before that one.
+
 ### Notes
 
 - The BRZ CA certificate and WSDL are shipped under `src/usp_mp/certs/` and `src/usp_mp/wsdl/`. The schema has one local patch so zeep can parse sender and receiver (see `src/usp_mp/wsdl/PATCHES.md`); re-apply it when replacing the vendor files.

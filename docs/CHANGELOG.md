@@ -6,6 +6,7 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/). The repo
 
 ### Added
 
+- Documentation of the bundled BRZ root CA ("Trust anchor" in `docs/howto.md`) and `tests/test_ca.py`, which pins its fingerprint and warns a year before it expires.
 - Logging under `usp_mp` (DEBUG: endpoint, connections, queries, fetches, downloads; INFO: close/delete; WARNING: truncated new-only results, unparsed response elements, a client certificate expiring within 30 days or expired). `USP_MP_Adapter.certificate_expires`.
 - Typed accessors: `Delivery.sender` and `Delivery.receiver` (a `Contact`: organisation or natural person, with identification), `Delivery.gz`, `delivery_quality`, `app_delivery_id`, `zs_delivery_id`, `delivery_service`, `origin` and `raw`; `Attachment.size`, `document_class` and `raw`.
 - `usp_mp.mail.unparsed_elements(value)` lists XML elements zeep couldn't map to the schema; `Delivery` logs a warning on `usp_mp.mail` when a response contains any.

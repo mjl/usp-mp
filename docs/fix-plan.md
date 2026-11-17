@@ -203,7 +203,7 @@ As planned, plus a WARNING for a client certificate expiring within 30 days (or 
 
 Decided: BSD 3-Clause. Originally considered: MIT (simplest), Apache-2.0 (patent grant), or EUPL-1.2 (common for Austrian/EU public-sector-adjacent software). Then add `LICENSE` and set `license = "<SPDX id>"` plus `license-files = ["LICENSE"]` in `pyproject.toml`. That PEP 639 form needs `setuptools>=77`, so bump `build-system.requires` to match.
 
-### 5.3 CA certificate documentation [P3]
+### 5.3 CA certificate documentation [P3] — done, except the source
 
 Add a "Trust anchor" section to `docs/howto.md` with the subject, issuer, SHA-256 fingerprint and expiry (2038-01-12), where it was obtained, and how to refresh it. Include the inspection command:
 
