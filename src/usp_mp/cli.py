@@ -5,6 +5,7 @@ import os
 import sys
 from pathlib import Path
 
+from usp_mp.errors import UspMpError
 from usp_mp.mail import Mailbox
 
 def setup_logging():
@@ -102,7 +103,9 @@ def main(argv: list[str] | None = None) -> int:
     except Exception as e:
         if args.debug:
             raise
-        print(f"uspmp: error: {e}", file=sys.stderr)
+        # Our own errors carry a complete message; for anything else the type helps
+        detail = str(e) if isinstance(e, UspMpError) else f"{type(e).__name__}: {e}"
+        print(f"uspmp: error: {detail}", file=sys.stderr)
         return 1
     return 0
 

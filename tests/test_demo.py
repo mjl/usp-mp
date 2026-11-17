@@ -39,6 +39,7 @@ from zeep.transports import Transport
 from snapshot import differences
 from usp_mp import cli
 from usp_mp.adapter import USP_MP_Adapter
+from usp_mp.errors import ApiError, ChecksumError, MailboxStateError
 from usp_mp.mail import Attachment, Delivery, Mailbox
 
 pytestmark = pytest.mark.demo
@@ -307,7 +308,7 @@ def test_corrupted_checksum_is_detected(attachments, monkeypatch):
     algorithm, value = a.hash
     monkeypatch.setattr(Attachment, "hash", property(lambda self: (algorithm, bytes(len(value)))))
 
-    with pytest.raises(ValueError, match="do not match checksum"):
+    with pytest.raises(ChecksumError, match="do not match checksum"):
         a.content()
 
 
@@ -327,7 +328,7 @@ def test_unknown_uuid_is_an_api_error(raw, operation):
 
 
 def test_unknown_delivery_raises_in_library(demo_mailbox):
-    with pytest.raises(ValueError, match="get delivery.*000"):
+    with pytest.raises(ApiError, match=r"GetDelivery failed: \[000\] Unkown uuid\."):
         Delivery(demo_mailbox.connection, str(uuid.uuid4()))
 
 
@@ -389,7 +390,7 @@ def test_closed_mailbox_cannot_reach_service(demo_credentials):
     with Mailbox(demo_credentials.p12_path, demo_credentials.p12_pass) as mbox:
         attachment = next(next(mbox.deliveries(all=True)).attachments())
 
-    with pytest.raises(RuntimeError, match="closed"):
+    with pytest.raises(MailboxStateError, match="closed"):
         attachment.content()
 
 
@@ -414,4 +415,4 @@ def test_cli_rejects_wrong_password(demo_credentials, capsys):
     rc = cli.main(["--client-certificate", demo_credentials.p12_path, "--client-password", "definitely-wrong"])
 
     assert rc == 1
-    assert "uspmp: error: Failed to initialize USP_MP_Adapter" in capsys.readouterr().err
+    assert "wrong password or not a PKCS#12 file" in capsys.readouterr().err

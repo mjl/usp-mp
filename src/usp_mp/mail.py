@@ -1,27 +1,27 @@
 from __future__ import annotations
 
 from collections.abc import Iterator
-from typing import Any, Never
+from typing import Any
 import hashlib
 import hmac
 from datetime import datetime
 from .adapter import USP_MP_Adapter
+from .errors import ApiError, ChecksumError, MailboxStateError
 from .util import sanitize_filename
 
-from zeep.proxy import ServiceProxy
 
-class USP_MP_Base:
-    def raise_on_error(self, r: Any, source: str) -> None | Never:
-        if (r.Error and
-            'ErrorCode' in r.Error and
-            'ErrorMessage' in r.Error
-        ):
-            code = r.Error.ErrorCode
-            msg = r.Error.ErrorMessage
-            raise ValueError(f"Failed {source}: {code=} {msg=}")
+def raise_on_error(response: Any, operation: str) -> None:
+    """Raise ApiError if a SOAP response carries an ``Error``.
+
+    Every response type is a choice of result or ``Error``, and an ``Error``
+    always has both ErrorCode and ErrorMessage (zuseaa_p2.xsd).
+    """
+    error = getattr(response, "Error", None)
+    if error is not None:
+        raise ApiError(error.ErrorCode, error.ErrorMessage, operation)
 
 
-class Mailbox(USP_MP_Base):
+class Mailbox:
     """A Mein Postkorb mailbox. Must be used as a context manager:
 
         with Mailbox(p12_path, p12_pass) as mbox:
@@ -35,16 +35,14 @@ class Mailbox(USP_MP_Base):
     """
 
     def __init__(self, p12_path: str, p12_pass: str, prod: bool = False) -> None:
-        try:
-            self.uspmp = USP_MP_Adapter(p12_path, p12_pass, prod=prod)
-        except Exception as e:
-            raise RuntimeError(f"Failed to initialize USP_MP_Adapter: {e}")
+        # Raises CertificateError for an unreadable/undecryptable .p12
+        self.uspmp = USP_MP_Adapter(p12_path, p12_pass, prod=prod)
         self._connection: USP_MP_Adapter.ConnectionContext | None = None
         self._used = False
 
     def __enter__(self) -> Mailbox:
         if self._used:
-            raise RuntimeError("A Mailbox can only be opened once; create a new one")
+            raise MailboxStateError("A Mailbox can only be opened once; create a new one")
         self._used = True
         self._connection = self.uspmp.connection().__enter__()
         return self
@@ -62,10 +60,10 @@ class Mailbox(USP_MP_Base):
     def connection(self) -> USP_MP_Adapter.ConnectionContext:
         if self._connection is None:
             if self._used:
-                raise RuntimeError("Mailbox is closed")
-            raise RuntimeError("Mailbox is not open; use it as 'with Mailbox(...) as mbox:'")
+                raise MailboxStateError("Mailbox is closed")
+            raise MailboxStateError("Mailbox is not open; use it as 'with Mailbox(...) as mbox:'")
         if self._connection.closed:
-            raise RuntimeError("Mailbox is closed")
+            raise MailboxStateError("Mailbox is closed")
         return self._connection
 
     @property
@@ -86,7 +84,7 @@ class Mailbox(USP_MP_Base):
             deliveries_selector = self.uspmp.types.NewDeliveriesOnlyType(Limit=100)  # pyright: ignore[reportCallIssue]
 
         r = conn.service.QueryDeliveries(deliveries_selector, Version=self.uspmp.VERSION)
-        self.raise_on_error(r, 'query deliveries')
+        raise_on_error(r, "QueryDeliveries")
         if r.ResultsList.HitCount == 0:
             return
 
@@ -94,7 +92,7 @@ class Mailbox(USP_MP_Base):
             yield Delivery(conn, delivery_id)
 
 
-class Attachment(USP_MP_Base):
+class Attachment:
     def __init__(
         self, connection: USP_MP_Adapter.ConnectionContext, delivery_id: str, att: Any
     ) -> None:
@@ -121,14 +119,14 @@ class Attachment(USP_MP_Base):
             algorithm, expected = self.hash
             hashlib_name = self.CHECKSUM_ALGORITHMS.get(algorithm)
             if hashlib_name is None:
-                raise ValueError(
+                raise ChecksumError(
                     f"Unsupported checksum algorithm {algorithm!r} for attachment {self.id} "
                     f"(expected one of {', '.join(self.CHECKSUM_ALGORITHMS)})"
                 )
             actual = hashlib.new(hashlib_name, content_bytes).digest()
 
             if not hmac.compare_digest(actual, expected):
-                raise ValueError(
+                raise ChecksumError(
                     f"Downloaded content bytes do not match checksum "
                     f"(expected {expected.hex()}, got {actual.hex()})"
                 )
@@ -156,14 +154,14 @@ class Attachment(USP_MP_Base):
         return self.attachment.CheckSum.AlgorithmID, self.attachment.CheckSum.Value
 
 
-class Delivery(USP_MP_Base):
+class Delivery:
     def __init__(self, connection: USP_MP_Adapter.ConnectionContext, id: str) -> None:
         self.id = id
         self.connection = connection
         self.delivery = connection.service.GetDelivery(
             id, Version=connection.uspmp.VERSION
         )
-        self.raise_on_error(self.delivery, 'get delivery')
+        raise_on_error(self.delivery, "GetDelivery")
 
     def __repr__(self) -> str:
         return f"Delivery<{self.id} [{self.subject}]>"
@@ -189,7 +187,7 @@ class Delivery(USP_MP_Base):
         r = self.connection.service.CloseDelivery(
             self.id, Version=self.connection.uspmp.VERSION
         )
-        self.raise_on_error(r, 'close delivery')
+        raise_on_error(r, "CloseDelivery")
 
         if delete:
             self.delete()
@@ -198,4 +196,4 @@ class Delivery(USP_MP_Base):
         r = self.connection.service.DeleteDelivery(
             self.id, Version=self.connection.uspmp.VERSION
         )
-        self.raise_on_error(r, 'delete delivery')
+        raise_on_error(r, "DeleteDelivery")

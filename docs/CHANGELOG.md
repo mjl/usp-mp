@@ -6,7 +6,12 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/). The repo
 
 ### Added
 
+- Exception hierarchy in `usp_mp.errors`, exported from `usp_mp`: `UspMpError`, `CertificateError`, `ApiError` (`.code`, `.message`, `.operation`), `ChecksumError` and `MailboxStateError`. `Mailbox` is now exported from `usp_mp` too.
 - Demo-service test suite (`tests/test_demo.py`, marker `demo`): 36 tests against the Mein Postkorb TEST endpoint plus 2 strict `xfail` tests for the known `CorporateBody` parsing gap. Besides invariants, they compare the fixed demo data against the values documented in the vendor HowTo and against a golden snapshot (`tests/data/demo_snapshot.json`, re-recorded with `--update-demo-snapshot`). Each person running them provides their own client certificate and password via `--p12=` / `--p12-password-file=` / `--p12-password=` or `USP_MP_P12` / `USP_MP_P12_PASS_FILE` / `USP_MP_P12_PASS`; without a certificate they are skipped. See README "Tests against the demo service".
+
+### Changed
+
+- Error types and messages: certificate problems raise `CertificateError` (previously `RuntimeError("Failed to initialize USP_MP_Adapter: …")`, or `ssl.SSLError`/`ValueError` from the adapter); API errors raise `ApiError` with messages like `GetDelivery failed: [000] Unkown uuid.`; checksum problems raise `ChecksumError`; using a closed or unopened mailbox raises `MailboxStateError`. The previous builtin types still match (`ApiError` and `ChecksumError` are `ValueError`s, `MailboxStateError` is a `RuntimeError`), except for certificate errors. The CLI prefixes unexpected (non-`usp_mp`) errors with their type.
 
 ## [1.0.20261117] - 2026-11-17
 

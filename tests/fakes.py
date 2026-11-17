@@ -21,6 +21,7 @@ from types import SimpleNamespace
 import requests
 
 from usp_mp.adapter import USP_MP_Adapter
+from usp_mp.errors import MailboxStateError
 
 SERVER_MAX_LIMIT = 1000
 UNKNOWN_UUID_ERROR = ("000", "Unkown uuid.")  # sic, as documented by the vendor
@@ -203,7 +204,7 @@ class FakeConnection:
 
     def _ensure_open(self) -> None:
         if self.closed:
-            raise RuntimeError("Mailbox connection is closed")
+            raise MailboxStateError("Mailbox connection is closed")
 
     @property
     def service(self) -> FakeService:

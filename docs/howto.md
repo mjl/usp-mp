@@ -64,8 +64,8 @@ with Mailbox(p12_path, p12_pass, prod=False) as mbox:
 
 `Mailbox(p12_path, p12_pass, prod=False)` loads the client certificate for the demo or production endpoint. It must be used as a context manager: `with Mailbox(...) as mbox:` opens one connection (HTTP session and SOAP client) that all calls inside the block share, and closes it when the block ends, even on an exception.
 
-- Calling `deliveries()` outside a `with` block, or after it ended, raises `RuntimeError`.
-- After the block, `Delivery` and `Attachment` objects keep their already-fetched data (subject, file names, …), but anything that contacts the service (`content()`, `close()`, `delete()`) raises `RuntimeError`.
+- Calling `deliveries()` outside a `with` block, or after it ended, raises `MailboxStateError`.
+- After the block, `Delivery` and `Attachment` objects keep their already-fetched data (subject, file names, …), but anything that contacts the service (`content()`, `close()`, `delete()`) raises `MailboxStateError`.
 - A `Mailbox` can be opened only once; create a new one for another session. `mbox.close()` closes it early and is safe to call more than once.
 
 `Mailbox.deliveries()` yields `Delivery` objects.
@@ -119,6 +119,31 @@ with Mailbox(p12_path, p12_pass) as mbox:
 ```
 
 `sanitized_filename` lower-cases the name, folds accents to ASCII (`März` → `marz`), replaces every run of other characters with a single `_`, and picks the extension from the MIME type unless the original one already matches. Two attachments can still end up with the same name; `unique_path` appends `_1`, `_2`, … instead of overwriting. Both helpers, `sanitize_filename(name, mime)` and `unique_path(directory, filename)`, are in `usp_mp.util`.
+
+### Errors
+
+All exceptions derive from `usp_mp.UspMpError`, so one `except UspMpError` catches everything the library raises on purpose:
+
+| Exception | Raised when | Also a |
+|---|---|---|
+| `CertificateError` | The `.p12` can't be read, the password is wrong, or it contains no key and certificate | |
+| `ApiError` | The service answers with an `Error`; has `.code`, `.message` and `.operation` (for example `GetDelivery`) | `ValueError` |
+| `ChecksumError` | A downloaded attachment doesn't match its checksum, or the algorithm is unsupported | `ValueError` |
+| `MailboxStateError` | The mailbox isn't open yet, or is already closed | `RuntimeError` |
+
+```python
+from usp_mp import ApiError, CertificateError, Mailbox
+
+try:
+    with Mailbox(p12_path, p12_pass) as mbox:
+        ...
+except CertificateError as e:
+    print("check the certificate and password:", e)
+except ApiError as e:
+    print("service error", e.code, e.message, "in", e.operation)
+```
+
+Network problems surface as the underlying `requests` exceptions (for example `requests.ConnectionError`), and HTTP errors on attachment downloads as `requests.HTTPError`.
 
 ## Internals
 

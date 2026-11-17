@@ -5,6 +5,7 @@ import getpass
 import pytest
 
 from usp_mp import cli
+from usp_mp.errors import ApiError
 
 
 @pytest.fixture
@@ -164,7 +165,7 @@ def test_runtime_error_is_one_line_and_exit_1(capsys, cert, fake_adapters, servi
     assert run_cli("--client-certificate", cert, "--client-password", "") == 1
 
     err = capsys.readouterr().err
-    assert err.startswith("uspmp: error: ") and "Mailbox locked" in err
+    assert err == "uspmp: error: QueryDeliveries failed: [123] Mailbox locked\n"
     assert "Traceback" not in err
     assert service.open_connections == 0
 
@@ -173,7 +174,7 @@ def test_debug_shows_full_exception(cert, fake_adapters, service, monkeypatch):
     monkeypatch.setattr(cli, "setup_logging", lambda: None)  # keep global logging config untouched
     service.fail_next("QueryDeliveries", "123", "Mailbox locked")
 
-    with pytest.raises(ValueError, match="Mailbox locked"):
+    with pytest.raises(ApiError, match="Mailbox locked"):
         run_cli("--client-certificate", cert, "--client-password", "", "--debug")
 
 
@@ -181,7 +182,19 @@ def test_certificate_load_failure_is_reported(capsys, cert):
     """Real adapter, empty dummy .p12: fails cleanly instead of with a traceback."""
     assert run_cli("--client-certificate", cert, "--client-password", "") == 1
 
-    assert capsys.readouterr().err.startswith("uspmp: error: Failed to initialize USP_MP_Adapter")
+    assert capsys.readouterr().err == (
+        f"uspmp: error: Cannot load client certificate {cert}: wrong password or not a PKCS#12 file\n"
+    )
+
+
+def test_unexpected_error_names_its_type(capsys, cert, fake_adapters, service, monkeypatch):
+    def boom(*args, **kwargs):
+        raise OSError("disk full")
+
+    monkeypatch.setattr(service, "QueryDeliveries", boom)
+
+    assert run_cli("--client-certificate", cert, "--client-password", "") == 1
+    assert capsys.readouterr().err == "uspmp: error: OSError: disk full\n"
 
 
 def test_sys_argv_is_used_by_default(monkeypatch, cert, fake_adapters, service):

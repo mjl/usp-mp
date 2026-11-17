@@ -81,7 +81,9 @@ Consider a separate, longer read timeout for large attachments: `timeout=(10, 60
 
 ## Phase 2: Correctness and error model
 
-### 2.1 Exception hierarchy [D5]
+### 2.1 Exception hierarchy [D5] — done
+
+Implemented with two deviations: `ResultsTruncatedError` was dropped (new-only truncation only warns, per the maintainer's decision, so nothing would raise it), and `MailboxStateError(UspMpError, RuntimeError)` was added for not-open/closed mailboxes. Failures inside `build_ssl_context` also become `CertificateError`.
 
 New `src/usp_mp/errors.py`:
 
@@ -95,7 +97,7 @@ UspMpError(Exception)
 
 `ApiError` and `ChecksumError` also subclass `ValueError`, so existing `except ValueError` code keeps working. `Mailbox.__init__` stops wrapping everything in `RuntimeError`. Instead, `load_p12_cert` raises `CertificateError(...) from e` for a bad password or file, and other exceptions propagate unchanged. Export the classes from `usp_mp/__init__.py`.
 
-### 2.2 `raise_on_error` [B4]
+### 2.2 `raise_on_error` [B4] — done
 
 ```python
 def raise_on_error(self, r: Any, operation: str) -> None:

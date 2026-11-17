@@ -14,6 +14,8 @@ from cryptography.hazmat.primitives.serialization import pkcs12
 from cryptography.hazmat.backends import default_backend
 
 from zeep import Client, Settings
+
+from .errors import CertificateError, MailboxStateError
 from zeep.transports import Transport
 from zeep.xsd.types.base import Type as ZeepBaseType
 
@@ -90,14 +92,24 @@ class USP_MP_Adapter:
             setattr(self.types, type_name, t)
 
     def load_p12_cert(self, p12_path: str, p12_pass: str|None = None):
-        """Load PKCS12 and extract certificate and private key"""
+        """Load PKCS12 and extract certificate and private key; raises CertificateError"""
 
-        with open(p12_path, "rb") as f:
-            p12_data = f.read()
+        try:
+            with open(p12_path, "rb") as f:
+                p12_data = f.read()
+        except OSError as e:
+            raise CertificateError(f"Cannot read client certificate {p12_path}: {e.strerror}") from e
         password = p12_pass.encode() if p12_pass else None
-        private_key, certificate, additional_certs = pkcs12.load_key_and_certificates(
-            p12_data, password, default_backend()
-        )
+        try:
+            private_key, certificate, additional_certs = pkcs12.load_key_and_certificates(
+                p12_data, password, default_backend()
+            )
+        except ValueError as e:
+            raise CertificateError(
+                f"Cannot load client certificate {p12_path}: wrong password or not a PKCS#12 file"
+            ) from e
+        if private_key is None or certificate is None:
+            raise CertificateError(f"Client certificate {p12_path} contains no private key and certificate")
         return private_key, certificate
 
     def build_ssl_context(self, private_key, certificate) -> ssl.SSLContext:
@@ -125,7 +137,10 @@ class USP_MP_Adapter:
             key_path = os.path.join(tmpdir, "key.pem")
             _write_private_file(cert_path, cert_pem)
             _write_private_file(key_path, encrypted_key_pem)
-            ctx.load_cert_chain(cert_path, key_path, password=one_time_password)
+            try:
+                ctx.load_cert_chain(cert_path, key_path, password=one_time_password)
+            except ssl.SSLError as e:
+                raise CertificateError(f"Cannot use client certificate: {e}") from e
 
         return ctx
 
@@ -158,7 +173,7 @@ class USP_MP_Adapter:
 
         def _ensure_open(self) -> None:
             if self.closed:
-                raise RuntimeError("Mailbox connection is closed")
+                raise MailboxStateError("Mailbox connection is closed")
 
         @property
         def service(self):

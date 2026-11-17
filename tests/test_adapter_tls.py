@@ -18,6 +18,7 @@ from cryptography.hazmat.primitives.serialization import pkcs12
 from cryptography.x509.oid import NameOID
 
 from usp_mp.adapter import USP_MP_Adapter
+from usp_mp.errors import CertificateError, MailboxStateError
 
 P12_PASSWORD = "p12-secret"
 
@@ -234,11 +235,11 @@ def test_connection_unusable_after_close(adapter, start_server):
         conn.download_attachment("d", "a")
 
     assert conn.closed
-    with pytest.raises(RuntimeError, match="closed"):
+    with pytest.raises(MailboxStateError, match="closed"):
         conn.service
-    with pytest.raises(RuntimeError, match="closed"):
+    with pytest.raises(MailboxStateError, match="closed"):
         conn.download_attachment("d", "a")
-    with pytest.raises(RuntimeError, match="closed"):
+    with pytest.raises(MailboxStateError, match="closed"):
         conn.__enter__()
     conn.close()  # idempotent
 
@@ -258,7 +259,7 @@ def test_mailbox_end_to_end_over_mutual_tls(pki, monkeypatch, start_server):
         list(mbox.deliveries())
 
     assert json.loads(excinfo.value.message)["client_cn"] == "test-client"
-    with pytest.raises(RuntimeError, match="closed"):
+    with pytest.raises(MailboxStateError, match="closed"):
         mbox.deliveries()
 
 
@@ -293,8 +294,10 @@ def test_temp_dir_removed_when_loading_fails(pki, monkeypatch, record_key_loadin
 
     monkeypatch.setattr(ssl.SSLContext, "load_cert_chain", failing)
 
-    with pytest.raises(ssl.SSLError, match="simulated failure"):
+    with pytest.raises(CertificateError, match="simulated failure") as excinfo:
         USP_MP_Adapter(pki["p12"], P12_PASSWORD)
+
+    assert isinstance(excinfo.value.__cause__, ssl.SSLError)
 
     assert record_key_loading
     assert not os.path.exists(record_key_loading[0]["dir"])
@@ -323,5 +326,21 @@ def test_hostname_mismatch_is_rejected(adapter, start_server):
 
 def test_wrong_p12_password_fails(pki, monkeypatch):
     monkeypatch.setattr(USP_MP_Adapter, "CA_PATH", pki["ca"])
-    with pytest.raises(ValueError):
+    with pytest.raises(CertificateError, match="wrong password or not a PKCS#12 file"):
         USP_MP_Adapter(pki["p12"], "wrong")
+
+
+def test_missing_p12_fails(tmp_path):
+    with pytest.raises(CertificateError, match="Cannot read client certificate"):
+        USP_MP_Adapter(str(tmp_path / "missing.p12"), "pw")
+
+
+def test_p12_without_private_key_fails(pki, tmp_path, monkeypatch):
+    monkeypatch.setattr(USP_MP_Adapter, "CA_PATH", pki["ca"])
+    cert = x509.load_pem_x509_certificate(open(pki["ca"], "rb").read())
+    p12 = tmp_path / "cert-only.p12"
+    p12.write_bytes(pkcs12.serialize_key_and_certificates(
+        b"no-key", None, cert, None, serialization.BestAvailableEncryption(b"pw")))
+
+    with pytest.raises(CertificateError, match="contains no private key"):
+        USP_MP_Adapter(str(p12), "pw")

@@ -11,6 +11,8 @@ import hashlib
 import pytest
 import requests
 
+from usp_mp.errors import ApiError, ChecksumError, MailboxStateError
+
 from fakes import FakeAttachment
 from usp_mp.adapter import USP_MP_Adapter
 
@@ -69,7 +71,7 @@ def test_construction_does_not_connect(fake_adapters, service):
 def test_deliveries_without_with_fails_immediately(fake_adapters):
     mbox = make_mailbox()
 
-    with pytest.raises(RuntimeError, match="not open.*with Mailbox"):
+    with pytest.raises(MailboxStateError, match="not open.*with Mailbox"):
         mbox.deliveries()  # raises on the call, not on first iteration
 
 
@@ -77,18 +79,18 @@ def test_deliveries_after_close_fails(fake_adapters):
     with make_mailbox() as mbox:
         pass
 
-    with pytest.raises(RuntimeError, match="Mailbox is closed"):
+    with pytest.raises(MailboxStateError, match="Mailbox is closed"):
         mbox.deliveries()
-    with pytest.raises(RuntimeError, match="Mailbox is closed"):
+    with pytest.raises(MailboxStateError, match="Mailbox is closed"):
         mbox.service
 
 
 def test_mailbox_cannot_be_reopened(fake_adapters):
     mbox = make_mailbox()
     with mbox:
-        with pytest.raises(RuntimeError, match="only be opened once"):
+        with pytest.raises(MailboxStateError, match="only be opened once"):
             mbox.__enter__()
-    with pytest.raises(RuntimeError, match="only be opened once"):
+    with pytest.raises(MailboxStateError, match="only be opened once"):
         with mbox:
             pass
 
@@ -100,7 +102,7 @@ def test_close_is_idempotent_and_closes(fake_adapters, service):
     mbox.close()
 
     assert service.open_connections == 0
-    with pytest.raises(RuntimeError, match="Mailbox is closed"):
+    with pytest.raises(MailboxStateError, match="Mailbox is closed"):
         mbox.deliveries()
 
 
@@ -108,7 +110,7 @@ def test_closed_before_open_cannot_be_opened(fake_adapters):
     mbox = make_mailbox()
     mbox.close()
 
-    with pytest.raises(RuntimeError):
+    with pytest.raises(MailboxStateError):
         with mbox:
             pass
 
@@ -133,7 +135,7 @@ def test_objects_from_closed_mailbox(fake_adapters, service):
     assert attachment.filename == "mailbody"
     # ... but nothing can reach the service any more
     for action in (attachment.content, delivery.close, delivery.delete):
-        with pytest.raises(RuntimeError, match="closed"):
+        with pytest.raises(MailboxStateError, match="closed"):
             action()
 
 
@@ -188,8 +190,12 @@ def test_query_selectors_and_version(mailbox, service):
 def test_query_error_raises(mailbox, service):
     service.fail_next("QueryDeliveries", "123", "Mailbox locked")
 
-    with pytest.raises(ValueError, match="query deliveries.*123.*Mailbox locked"):
+    with pytest.raises(ApiError, match=r"QueryDeliveries failed: \[123\] Mailbox locked") as excinfo:
         list(mailbox.deliveries())
+
+    assert (excinfo.value.code, excinfo.value.message, excinfo.value.operation) == (
+        "123", "Mailbox locked", "QueryDeliveries"
+    )
 
 
 
@@ -219,7 +225,7 @@ def test_get_delivery_error_raises(mailbox, service):
     service.add_delivery()
     service.fail_next("GetDelivery", "000", "Unkown uuid.")
 
-    with pytest.raises(ValueError, match="get delivery.*000"):
+    with pytest.raises(ApiError, match=r"GetDelivery failed: \[000\]"):
         list(mailbox.deliveries())
 
 
@@ -252,7 +258,7 @@ def test_close_and_delete_errors_raise(mailbox, service, operation):
     [delivery] = mailbox.deliveries()
     service.fail_next(operation)
 
-    with pytest.raises(ValueError, match="999"):
+    with pytest.raises(ApiError, match=rf"{operation} failed: \[999\]"):
         delivery.close() if operation == "CloseDelivery" else delivery.delete()
 
 
@@ -309,7 +315,7 @@ def test_checksum_mismatch_raises(mailbox, service):
     [delivery] = mailbox.deliveries()
     [attachment] = delivery.attachments()
 
-    with pytest.raises(ValueError, match="do not match checksum"):
+    with pytest.raises(ChecksumError, match="do not match checksum"):
         attachment.content()
 
 
@@ -321,7 +327,7 @@ def test_unsupported_checksum_algorithm_raises(mailbox, service, algorithm):
     [delivery] = mailbox.deliveries()
     [attachment] = delivery.attachments()
 
-    with pytest.raises(ValueError, match=f"Unsupported checksum algorithm '{algorithm}'"):
+    with pytest.raises(ChecksumError, match=f"Unsupported checksum algorithm '{algorithm}'"):
         attachment.content()
 
 

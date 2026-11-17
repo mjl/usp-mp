@@ -15,7 +15,11 @@ def test_module_imports(module):
 def test_public_api():
     import usp_mp
 
-    assert usp_mp.__all__ == ["USP_MP_Adapter"]
+    assert set(usp_mp.__all__) == {
+        "ApiError", "CertificateError", "ChecksumError", "Mailbox", "MailboxStateError", "USP_MP_Adapter", "UspMpError",
+    }
+    for name in usp_mp.__all__:
+        assert getattr(usp_mp, name)
     assert re.fullmatch(r"\d+\.\d+\.\d+", usp_mp.__version__)
 
 
