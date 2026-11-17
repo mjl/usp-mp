@@ -12,8 +12,9 @@ import pytest
 import requests
 
 from usp_mp.errors import ApiError, ChecksumError, MailboxStateError
+from usp_mp.mail import Contact
 
-from fakes import FakeAttachment
+from fakes import FakeAttachment, physical_person
 from usp_mp.adapter import USP_MP_Adapter
 
 
@@ -420,6 +421,75 @@ def test_unknown_response_elements_are_logged(mailbox, service, monkeypatch, cap
     assert delivery.subject == "Test-Nachricht: 01"
     assert f"GetDelivery response for {fake.delivery_id} contains elements" in caplog.text
     assert "FutureElement" in caplog.text
+
+
+# --- typed accessors: sender, receiver, metadata -------------------------------------
+
+def test_sender_and_receiver_corporate_bodies(mailbox, service):
+    service.add_delivery()
+
+    [delivery] = mailbox.deliveries()
+
+    assert delivery.sender == Contact(
+        kind="corporate_body", name="Bundeskanzleramt",
+        identification_type="urn:publicid:gv.at:baseid+XGLN", identification_value="9110002628957",
+    )
+    assert delivery.receiver.kind == "corporate_body"
+    assert delivery.receiver.name == "Testfirma GmbH"
+    assert delivery.receiver.identification_value == "123456a"
+
+
+def test_physical_person_contact(mailbox, service):
+    service.add_delivery(sender=physical_person("Erika", "Musterfrau", datetime.date(1980, 1, 2)))
+
+    [delivery] = mailbox.deliveries()
+
+    assert delivery.sender == Contact(
+        kind="physical_person", name="Erika Musterfrau", given_name="Erika", family_name="Musterfrau",
+        date_of_birth=datetime.date(1980, 1, 2),
+    )
+
+
+def test_contact_without_person_or_identification(mailbox, service):
+    service.add_delivery(sender={})
+
+    [delivery] = mailbox.deliveries()
+
+    assert delivery.sender == Contact(kind=None, name=None)
+
+
+def test_metadata_accessors(mailbox, service):
+    fake = service.add_delivery(gz="GZ 2026-0815", quality="RSb")
+
+    [delivery] = mailbox.deliveries()
+
+    assert delivery.app_delivery_id == f"app-{fake.delivery_id[:8]}"
+    assert delivery.zs_delivery_id == f"zs-{fake.delivery_id[:8]}"
+    assert delivery.delivery_service == "Meinpostkorb"
+    assert delivery.origin == "AT:X:999-MPK"
+    assert delivery.gz == "GZ 2026-0815"
+    assert delivery.delivery_quality == "RSb"
+    assert delivery.raw is delivery.delivery.Delivery
+
+
+def test_optional_metadata_missing(mailbox, service):
+    service.add_delivery()
+
+    [delivery] = mailbox.deliveries()
+
+    assert delivery.gz is None
+
+
+def test_attachment_size_and_raw(mailbox, service):
+    att = FakeAttachment(b"12345", "a.pdf")
+    service.add_delivery(attachments=[att])
+
+    [delivery] = mailbox.deliveries()
+    [attachment] = delivery.attachments()
+
+    assert attachment.size == 5
+    assert attachment.document_class is None
+    assert attachment.raw is attachment.attachment
 
 
 # --- attachments --------------------------------------------------------------------

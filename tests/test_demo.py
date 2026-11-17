@@ -331,6 +331,28 @@ def test_every_delivery_starts_with_text_mail_body(deliveries):
         assert (first.filename, first.mimetype) == ("mailbody", "text/plain")
 
 
+def test_typed_accessors_match_raw_data(deliveries):
+    """Delivery.sender/receiver and metadata properties agree with the parsed SOAP data."""
+    for d in deliveries:
+        for contact, raw in ((d.sender, d.raw.Sender), (d.receiver, d.raw.Receiver)):
+            expected = contact_of(raw)
+            assert contact.kind == ("corporate_body" if expected["corporate_body"] else "physical_person")
+            assert contact.name == expected["corporate_body"]
+            assert (contact.identification_type, contact.identification_value) == (
+                expected["identification"]["type"], expected["identification"]["value"])
+        meta = d.raw.MetaData
+        assert (d.app_delivery_id, d.zs_delivery_id, d.delivery_service, d.gz) == (
+            meta.AppDeliveryID, meta.ZSDeliveryID, meta.DeliveryService, meta.GZ)
+        assert d.origin == meta.Origin.ParticipantID
+        assert d.delivery_quality in {"nonRSa", "RSa", "RSb"} or d.delivery_quality == meta.PrivateMessageQuality
+
+
+def test_demo_sender_and_receiver(deliveries):
+    """The demo's mock data: every delivery comes from the Bundeskanzleramt to "Testfirma GmbH"."""
+    assert {d.sender.name for d in deliveries} == {"Bundeskanzleramt"}
+    assert {d.receiver.name for d in deliveries} == {"Testfirma GmbH"}
+
+
 # --- library: attachments -----------------------------------------------------------
 
 def test_checksum_algorithms_and_values(attachments):

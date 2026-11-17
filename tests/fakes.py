@@ -32,6 +32,20 @@ def _new_id() -> str:
     return str(uuid.uuid4())
 
 
+def corporate_body(name: str, id_type: str | None = None, id_value: str | None = None) -> dict:
+    contact: dict = {"CorporateBody": {"FullName": name}}
+    if id_type:
+        contact["Identification"] = {"Value": {"_value_1": id_value}, "Type": id_type}
+    return contact
+
+
+def physical_person(given: str, family: str, date_of_birth=None) -> dict:
+    return {"PhysicalPerson": {
+        "Name": {"GivenName": given, "FamilyName": {"_value_1": family}},
+        "DateOfBirth": date_of_birth,
+    }}
+
+
 @dataclass
 class FakeAttachment:
     content: bytes
@@ -54,8 +68,11 @@ class FakeDelivery:
     timestamp: datetime.datetime
     read: bool = False
     delivery_id: str = field(default_factory=_new_id)
-    sender: str = "Bundeskanzleramt"  # CorporateBody FullName, as on the demo service
-    receiver: str = "Testfirma GmbH"
+    # aa:ContactType values, as zeep dicts; defaults match the demo service
+    sender: dict = field(default_factory=lambda: corporate_body("Bundeskanzleramt", "urn:publicid:gv.at:baseid+XGLN", "9110002628957"))
+    receiver: dict = field(default_factory=lambda: corporate_body("Testfirma GmbH", "urn:publicid:gv.at:baseid+XFN", "123456a"))
+    gz: str | None = None
+    quality: str = "nonRSa"
 
 
 class FakeService:
@@ -81,6 +98,7 @@ class FakeService:
         attachments: list[FakeAttachment] | None = None,
         *,
         read: bool = False,
+        **fields,
     ) -> FakeDelivery:
         n = next(self._counter)
         if attachments is None:
@@ -91,6 +109,7 @@ class FakeService:
             attachments=attachments,
             timestamp=BASE_TIMESTAMP + datetime.timedelta(minutes=n),
             read=read,
+            **fields,
         )
         self.deliveries[delivery.delivery_id] = delivery
         return delivery
@@ -152,9 +171,18 @@ class FakeService:
 
         return self._response("GetDeliveryResponse", Delivery={
             "DeliveryID": d.delivery_id,
-            "Sender": {"CorporateBody": {"FullName": d.sender}},
-            "Receiver": {"CorporateBody": {"FullName": d.receiver}},
-            "MetaData": {"DeliveryTimestamp": d.timestamp, "Subject": d.subject},
+            "Sender": d.sender,
+            "Receiver": d.receiver,
+            "MetaData": {
+                "AppDeliveryID": f"app-{d.delivery_id[:8]}",
+                "DeliveryService": "Meinpostkorb",
+                "ZSDeliveryID": f"zs-{d.delivery_id[:8]}",
+                "Origin": {"ParticipantID": "AT:X:999-MPK"},
+                "DeliveryTimestamp": d.timestamp,
+                "Subject": d.subject,
+                "GZ": d.gz,
+                "DeliveryQuality": d.quality,
+            },
             "AttachmentList": {"Attachment": [
                 {
                     "AttachmentID": a.attachment_id,

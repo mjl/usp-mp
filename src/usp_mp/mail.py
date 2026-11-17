@@ -5,7 +5,8 @@ from typing import Any
 import hashlib
 import hmac
 import logging
-from datetime import datetime
+from dataclasses import dataclass
+from datetime import date, datetime
 
 from lxml import etree
 from zeep.xsd.valueobjects import CompoundValue
@@ -52,6 +53,51 @@ def unparsed_elements(value: Any) -> list[str]:
 
     walk(value)
     return found
+
+
+def _text(value: Any) -> str | None:
+    """Text of an XSD simple-content element (zeep puts it in `_value_1` when the element has attributes)."""
+    if value is None:
+        return None
+    return getattr(value, "_value_1", value)
+
+
+@dataclass(frozen=True)
+class Contact:
+    """Sender or receiver of a delivery (aa:ContactType): an organisation or a natural person."""
+
+    kind: str | None
+    """"corporate_body", "physical_person", or None if the service sent neither."""
+    name: str | None
+    """FullName of an organisation, or "GivenName FamilyName" of a person."""
+    organization: str | None = None
+    given_name: str | None = None
+    family_name: str | None = None
+    date_of_birth: date | None = None
+    identification_type: str | None = None
+    """e.g. "urn:publicid:gv.at:baseid+XGLN" (GLN) or "...+XFN" (company register number)."""
+    identification_value: str | None = None
+
+    @classmethod
+    def from_zeep(cls, contact: Any) -> Contact | None:
+        if contact is None:
+            return None
+        ident = contact.Identification
+        common = {
+            "identification_type": None if ident is None else ident.Type,
+            "identification_value": None if ident is None else _text(ident.Value),
+        }
+        if contact.CorporateBody is not None:
+            body = contact.CorporateBody
+            return cls(kind="corporate_body", name=body.FullName, organization=body.Organization, **common)
+        if contact.PhysicalPerson is not None:
+            person = contact.PhysicalPerson
+            given = person.Name.GivenName if person.Name is not None else None
+            family = _text(person.Name.FamilyName) if person.Name is not None else None
+            name = " ".join(part for part in (given, family) if part) or None
+            return cls(kind="physical_person", name=name, given_name=given, family_name=family,
+                       date_of_birth=person.DateOfBirth, **common)
+        return cls(kind=None, name=None, **common)
 
 
 class Mailbox:
@@ -209,6 +255,20 @@ class Attachment:
         return self.attachment.MimeType
 
     @property
+    def size(self) -> int | None:
+        """Size in bytes as declared by the service."""
+        return self.attachment.Size
+
+    @property
+    def document_class(self) -> str | None:
+        return self.attachment.DocumentClass
+
+    @property
+    def raw(self) -> Any:
+        """The underlying zeep attachment object (aa:AttachmentType)."""
+        return self.attachment
+
+    @property
     def sanitized_filename(self) -> str:
         return sanitize_filename(self.filename, self.mimetype)
 
@@ -241,6 +301,50 @@ class Delivery:
     @property
     def subject(self) -> str:
         return self.delivery.Delivery.MetaData.Subject
+
+    @property
+    def raw(self) -> Any:
+        """The underlying zeep delivery object (aa:DeliveryType), for fields without an accessor."""
+        return self.delivery.Delivery
+
+    @property
+    def sender(self) -> Contact | None:
+        return Contact.from_zeep(self.raw.Sender)
+
+    @property
+    def receiver(self) -> Contact | None:
+        return Contact.from_zeep(self.raw.Receiver)
+
+    @property
+    def app_delivery_id(self) -> str | None:
+        """The sending application's ID for this delivery."""
+        return self.raw.MetaData.AppDeliveryID
+
+    @property
+    def zs_delivery_id(self) -> str | None:
+        """The delivery system's (Zustellsystem) ID for this delivery."""
+        return self.raw.MetaData.ZSDeliveryID
+
+    @property
+    def delivery_service(self) -> str | None:
+        return self.raw.MetaData.DeliveryService
+
+    @property
+    def gz(self) -> str | None:
+        """Geschäftszahl (the sender's file reference), if given."""
+        return self.raw.MetaData.GZ
+
+    @property
+    def origin(self) -> str | None:
+        """ParticipantID of the system the delivery came from."""
+        origin = self.raw.MetaData.Origin
+        return None if origin is None else origin.ParticipantID
+
+    @property
+    def delivery_quality(self) -> str | None:
+        """DeliveryQuality (e.g. "nonRSa", "RSa", "RSb") or PrivateMessageQuality, whichever is set."""
+        meta = self.raw.MetaData
+        return meta.DeliveryQuality if meta.DeliveryQuality is not None else meta.PrivateMessageQuality
 
     def attachments(self) -> Iterator[Attachment]:
         delivery = self.delivery.Delivery

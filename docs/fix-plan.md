@@ -169,7 +169,9 @@ This is inherent to the API: one `GetDelivery` per ID. After 2.3, the IDs are fe
 
 ## Phase 4: API surface and diagnostics
 
-### 4.1 Typed accessors [D4]
+### 4.1 Typed accessors [D4] — done
+
+Implemented as planned, with `Contact` as a frozen dataclass (`kind`, `name`, `organization`, `given_name`, `family_name`, `date_of_birth`, `identification_type`, `identification_value`). `Delivery.delivery` and `Attachment.attachment` stay (no deprecation, since there are no external callers), next to the new `raw`.
 
 On `Delivery`, add properties for the useful `MetaData` fields: `app_delivery_id`, `zs_delivery_id`, `gz` (Geschäftszahl), `origin` and `delivery_quality`. Also add `sender` and `receiver`, returning a small dataclass (`name`, `kind` set to "person" or "corporate body", and `identification`). Wrapping the zeep `Delivery.delivery` and `Attachment.attachment` objects, keep both reachable as `.raw` for advanced use, and keep the old attribute names as aliases for one release.
 Check the actual field shapes against demo data first, because the `Person`/`CorporateBody` substitution (see 4.2) affects how `sender` parses.

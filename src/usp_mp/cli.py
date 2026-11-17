@@ -118,7 +118,9 @@ def process(args: argparse.Namespace, dest: Path, p12_pass: str) -> None:
 
 
 def process_delivery(args: argparse.Namespace, dest: Path, post_idx: int, delivery) -> None:
-    print(f"[{post_idx:02}] {delivery.delivery_ts} {delivery}")
+    sender = delivery.sender
+    sender_text = f" from {sender.name}" if sender is not None and sender.name else ""
+    print(f"[{post_idx:02}] {delivery.delivery_ts} {delivery}{sender_text}")
 
     # One directory per delivery, named by its ID: stable across runs, so re-running
     # (e.g. with --all) refreshes the same files instead of failing or mixing deliveries

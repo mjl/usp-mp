@@ -82,6 +82,26 @@ with Mailbox(p12_path, p12_pass, prod=False) as mbox:
 A delivery is akin to an email in Mein Postkorb lingo. As such, it contains metadata (like subject, delivery timestamp, sender, recipient etc.) and attachments.
 `Delivery.attachments()` yields `Attachment` objects.
 
+Properties:
+
+| Property | Meaning |
+|---|---|
+| `id` | Delivery ID (UUID) |
+| `subject`, `delivery_ts` | Subject and delivery timestamp (timezone-aware `datetime`) |
+| `sender`, `receiver` | `Contact` objects (see below) |
+| `gz` | Geschäftszahl, the sender's file reference, if given |
+| `delivery_quality` | e.g. `nonRSa`, `RSa`, `RSb` (or the private-message quality) |
+| `app_delivery_id`, `zs_delivery_id` | IDs assigned by the sending application and the delivery system |
+| `delivery_service`, `origin` | Delivery service name and the originating system's participant ID |
+| `raw` | The full zeep object (`aa:DeliveryType`), for anything without a property |
+
+A `Contact` has `kind` (`"corporate_body"` or `"physical_person"`), `name` (the organisation's full name, or given and family name), `organization`, `given_name`, `family_name`, `date_of_birth`, and the identification as `identification_type` (for example `urn:publicid:gv.at:baseid+XGLN`) and `identification_value`. Fields that don't apply are `None`.
+
+```python
+for delivery in mbox.deliveries(all=False):
+    print(delivery.delivery_ts, delivery.sender.name, delivery.subject, delivery.gz)
+```
+
 Methods:
 
 - `close()` marks the delivery as read.
@@ -101,7 +121,7 @@ with Mailbox(p12_path, p12_pass) as mbox:
 An Attachment contains a part of a delivery. There is always at least one part called `mailbody` of type `text/plain`.
 A delivery can contain any number of Attachments.
 
-`Attachment.content(verify_checksum=True)` downloads the attachment via REST and optionally validates the checksum.
+`Attachment.content(verify_checksum=True)` downloads the attachment via REST and optionally validates the checksum. Other properties: `id`, `filename`, `mimetype`, `size` (as declared by the service), `document_class`, `hash` (algorithm and expected digest), `sanitized_filename`, and `raw` (the zeep object).
 
 **Example: save attachments per delivery using sanitized file names**
 

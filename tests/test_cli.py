@@ -36,7 +36,7 @@ def test_lists_deliveries(capsys, cert, fake_adapters, service):
     assert run_cli("--client-certificate", cert, "--client-password", "") == 0
 
     out = capsys.readouterr().out
-    assert "Bescheid 2026" in out
+    assert "Bescheid 2026]> from Bundeskanzleramt" in out
     assert "Mail body 1" in out  # short text/plain body is printed
     assert service.calls_to("CloseDelivery") == []  # nothing marked read without --save
     assert service.open_connections == 0
