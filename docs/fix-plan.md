@@ -56,7 +56,7 @@ Consider a separate, longer read timeout for large attachments: `timeout=(10, 60
 - An unset `ENV:NAME` gives `parser.error(f"environment variable {NAME} is not set")` instead of silently prompting.
 - A bad `--download` directory gives `parser.error(...)` (clean exit 2, no traceback).
 - Wrap the main loop: catch `usp_mp` errors (see 2.3), print one line to stderr, and return 1. `--debug` keeps the full traceback.
-- Password on the command line: add `--client-password-file PATH` and print a stderr warning when a literal password is given. Keep the literal form for now (removing it would break scripts). **Decision needed:** whether to remove it in a later release.
+- Password on the command line: add `--client-password-file PATH` and print a stderr warning when a literal password is given. Keep the literal form for now (removing it would break scripts). Decided: keep the literal form permanently, with the warning.
 
 **Tests:** argparse-level tests calling `main()` with patched `sys.argv` and asserting `SystemExit` codes.
 
@@ -221,7 +221,7 @@ After each PR, update `critique.md` status markers and `CHANGELOG.md`.
 ## Decisions needed from the maintainer
 
 1. ~~Keep `deliveries(all=...)`, or rename it to `new_only` with a deprecation (1.3)?~~ Decided: keep it.
-2. Eventually remove the literal `--client-password` value (1.4)?
+2. ~~Eventually remove the literal `--client-password` value (1.4)?~~ Decided: keep it, with the warning.
 3. Keep `connection()`, or move to `Mailbox` as a context manager (3.2)?
 4. Which licence (5.2)?
 5. Which versioning scheme (5.4)?
