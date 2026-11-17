@@ -60,7 +60,7 @@ Consider a separate, longer read timeout for large attachments: `timeout=(10, 60
 
 **Tests:** argparse-level tests calling `main()` with patched `sys.argv` and asserting `SystemExit` codes.
 
-### 1.5 Filename sanitising [B9, D6]
+### 1.5 Filename sanitising [B9, D6] — done
 
 - Move the logic to `src/usp_mp/util.py` as `sanitize_filename(name: str, mime: str) -> str`. `Attachment.sanitized_filename` delegates to it.
 - Use `re.sub(r"[^a-z0-9_-]+", "_", stem.lower()).strip("_")`, falling back to `"attachment"` if the result is empty.

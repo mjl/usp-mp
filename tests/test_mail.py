@@ -239,15 +239,15 @@ def test_download_error_propagates(mailbox, service):
         attachment.content()
 
 
-# --- filename sanitising ------------------------------------------------------------
+# --- filename sanitising (details in test_util.py) ---------------------------------
 
 @pytest.mark.parametrize(
     ("filename", "mimetype", "expected"),
     [
         ("Bescheid.pdf", "application/pdf", "bescheid.pdf"),
-        ("Rechnung März 2026.pdf", "application/pdf", "rechnung_m_rz_2026.pdf"),
+        ("Rechnung März 2026.pdf", "application/pdf", "rechnung_marz_2026.pdf"),
         ("mailbody", "text/plain", "mailbody.txt"),
-        ("data.bin", "application/x-unknown-type", "data.bin"),
+        ("a   b.pdf", "application/pdf", "a_b.pdf"),
     ],
 )
 def test_sanitized_filename(mailbox, service, filename, mimetype, expected):
@@ -257,13 +257,4 @@ def test_sanitized_filename(mailbox, service, filename, mimetype, expected):
     [attachment] = delivery.attachments()
 
     assert attachment.sanitized_filename == expected
-
-
-@pytest.mark.xfail(strict=True, reason="critique B9: runs of underscores are collapsed only once")
-def test_sanitized_filename_collapses_all_underscores(mailbox, service):
-    service.add_delivery(attachments=[FakeAttachment(b"x", "a   b.pdf", "application/pdf")])
-
-    [delivery] = mailbox.deliveries()
-    [attachment] = delivery.attachments()
-
-    assert attachment.sanitized_filename == "a_b.pdf"
+    assert attachment.sanitize_fname(filename, mimetype) == expected  # compatibility alias

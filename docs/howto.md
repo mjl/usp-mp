@@ -96,10 +96,11 @@ A delivery can contain any number of Attachments.
 
 `Attachment.content(verify_checksum=True)` downloads the attachment via REST and optionally validates the checksum.
 
-**Example: save attachments per-delivery using a sanitized filenames**
+**Example: save attachments per delivery using sanitized file names**
 
 ```python
 from pathlib import Path
+from usp_mp.util import unique_path
 
 out_dir = Path("/var/tmp/uspmp")
 out_dir.mkdir(parents=True, exist_ok=True)
@@ -109,8 +110,10 @@ for delivery in mbox.deliveries(all=False):
     delivery_dir.mkdir(exist_ok=True)
     for attachment in delivery.attachments():
         data = attachment.content(verify_checksum=True)
-        (delivery_dir / attachment.sanitized_filename).write_bytes(data)
+        unique_path(delivery_dir, attachment.sanitized_filename).write_bytes(data)
 ```
+
+`sanitized_filename` lower-cases the name, folds accents to ASCII (`März` → `marz`), replaces every run of other characters with a single `_`, and picks the extension from the MIME type unless the original one already matches. Two attachments can still end up with the same name; `unique_path` appends `_1`, `_2`, … instead of overwriting. Both helpers, `sanitize_filename(name, mime)` and `unique_path(directory, filename)`, are in `usp_mp.util`.
 
 ## Internals
 

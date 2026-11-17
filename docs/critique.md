@@ -6,7 +6,7 @@ Status markers: **[fixed]** resolved since the first review, **[open]** still ap
 
 The plan for fixing every open item is in [fix-plan.md](fix-plan.md); its "Facts checked while planning" section is the evidence behind the schema-based notes below.
 
-**Progress:** 7 of the original findings are fixed (exit status, `requires-python`, console script, `.gitignore`, typos/README install, private-key handling, attachment download through the session) plus one new bug found and fixed along the way. A test harness is in place (see Testing). Everything else is still open.
+**Progress:** fixed so far: B1, B3, B7, B9, B10 (new), the private-key handling (S1), attachment download through the session (S2), the command-line password (S3, with a warning), the sanitising utility (D6), the test harness, and the packaging/hygiene items marked below. Phase 0 and Phase 1 of [fix-plan.md](fix-plan.md) are done; everything else is still open.
 
 ## Bugs
 
@@ -18,7 +18,7 @@ The plan for fixing every open item is in [fix-plan.md](fix-plan.md); its "Facts
 6. **[open, decision] Builtin shadowing.** The `hash` local is gone (fixed with B3). `all` (parameter of `Mailbox.deliveries`) still shadows the builtin, but it is public API; left as is pending the maintainer's decision (fix-plan 1.3).
 7. **[fixed] CLI argument handling.** `--client-certificate` is required and must exist; an unset `ENV:` variable, an unreadable password file and a bad `--download` directory are argparse usage errors (exit 2). Runtime errors print one `uspmp: error: …` line and exit 1 (`--debug` shows the traceback); Ctrl-C exits 130. `main()` takes an optional `argv` list.
 8. **[open] `--save` directory naming is unstable.** `dest / str(post_idx)` with `exist_ok=False`: a second run crashes, and index `0` refers to different deliveries on different days. Use the delivery ID (as `docs/howto.md` already does).
-9. **[open] Filename sanitising quirks.** `.replace("__", "_")` collapses only one pass (`a___b` → `a__b`); use `re.sub("[^a-z0-9_-]+", "_", …)`. The extension comes from the server-supplied MIME type, so a mislabeled file gets the wrong extension. Two attachments can sanitise to the same name and overwrite each other in the library example.
+9. **[fixed] Filename sanitising quirks.** Now `usp_mp.util.sanitize_filename`: every run of unsafe characters (including existing underscores) becomes one `_`, with none at the ends; accents are folded to ASCII; the stem is capped at 100 characters, with a fallback name if it ends up empty; and the original extension is kept when it matches the MIME type. A dot inside a name (`v1.2 final`) is no longer mistaken for an extension. `usp_mp.util.unique_path` avoids collisions, and the howto example uses it. The CLI already prefixes an index.
 10. **[fixed] `usp_mp.mail` could not be imported on Python < 3.14.** New finding. `Mailbox.deliveries()` is annotated `-> Iterator[Delivery]` before `Delivery` is defined; only 3.14's deferred annotation evaluation made that work, so the `>=3.14` pin was hiding a `NameError` on 3.11–3.13. Fixed with `from __future__ import annotations` in `mail.py`; import verified on 3.11–3.14.
 11. **[open, *verify*] Query requests differ from the documented form.** New finding while writing the request-shape tests. The vendor HowTo sends `<aa:AllDeliveries>` / `<aa:NewDeliveriesOnly>`, which are substitution-group members of `aa:Query`. zeep cannot emit substitution elements (the same limitation behind the `strict=False` workaround below) and sends `<aa:Query xsi:type="aa:AllDeliveriesType">` instead, even when given the `AllDeliveries` element. That is schema-valid, because `Query` itself is not abstract (only its type is), and the client has presumably always worked this way. But it is not what the vendor documents, so a stricter server-side validator could reject it. `tests/test_demo.py::test_query_accepted` confirms acceptance once run with a certificate; if it ever fails, the fix is to build the `QueryDeliveriesRequest` body by hand (e.g. zeep's `xsd.AnyObject` or a raw lxml element).
 
@@ -31,14 +31,14 @@ The plan for fixing every open item is in [fix-plan.md](fix-plan.md); its "Facts
 
 ## Design
 
-All **[open]**.
+All **[open]** unless marked.
 
 - **Zeep client built twice, per connection.** `read_wsdl_types` parses the WSDL once in `__init__`, and every `ConnectionContext` parses it again. Zeep WSDL parsing is slow; build once and reuse.
 - **`self.service = None` then `assert connection.service` everywhere.** Initialise fully in the constructor so the type isn't `Optional`.
 - **`types = ParamTypes()` is a class attribute mutated per instance via `setattr`.** Shared global state behind an instance API; not thread-safe.
 - **Zeep objects leak out** via `Delivery.delivery` and `Attachment.attachment`. Sender, recipient and other metadata mentioned in the docs have no accessors.
 - **Error handling.** `Mailbox.__init__` catches `Exception` and re-raises `RuntimeError` without `from e`, so a wrong password and a corrupt file are indistinguishable. Everything else is bare `ValueError`. A small exception hierarchy carrying the API error code would let callers react.
-- **Sanitising belongs in a utility**, not on `Attachment`.
+- **[fixed] Sanitising belongs in a utility**: moved to `usp_mp.util`; `Attachment.sanitize_fname` remains as a compatibility alias.
 
 ## Packaging and repo hygiene
 
@@ -79,7 +79,7 @@ Still missing tests for the fixes themselves (pagination, exception hierarchy, e
 See [fix-plan.md](fix-plan.md) for the detailed, phased plan, PR sequence, and the decisions it needs from the maintainer. In short:
 
 1. ~~Test scaffolding~~ (done); run `pytest -m demo` once with a certificate to settle the *verify* items.
-2. Quick fixes: filename sanitising (checksum done).
+2. ~~Quick fixes~~ (done).
 3. CLI hardening: stable `--save` directories (argument handling done).
 4. Exception hierarchy, `raise_on_error`, and pagination.
 5. Connection refactor: build the zeep client once (the private-key part is done).

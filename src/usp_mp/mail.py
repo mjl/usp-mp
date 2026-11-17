@@ -2,13 +2,11 @@ from __future__ import annotations
 
 from collections.abc import Iterator
 from typing import Any, Never
-import re
-import os.path
-import mimetypes
 import hashlib
 import hmac
 from datetime import datetime
 from .adapter import USP_MP_Adapter
+from .util import sanitize_filename
 
 from zeep.proxy import ServiceProxy
 
@@ -65,18 +63,9 @@ class Attachment(USP_MP_Base):
     def __repr__(self) -> str:
         return f"Attachment<{self.id} [{self.filename}]>"
 
-    SANITIZE_RE = re.compile("[^a-z0-9_-]", re.IGNORECASE)
-
     def sanitize_fname(self, s: str, mime: str) -> str:
-        """
-        Sanitize a filename `s` with mime type `mime`
-        to ensure no funny characters and proper extension.
-        """
-
-        fpart, extpart = os.path.splitext(s)
-        n = self.SANITIZE_RE.sub("_", fpart.lower()).replace("__", "_")
-        guessed_ext = mimetypes.guess_extension(mime, strict=False)
-        return "".join((n, guessed_ext if guessed_ext else extpart))
+        """Kept for compatibility; use `usp_mp.util.sanitize_filename`."""
+        return sanitize_filename(s, mime)
 
     # CheckSumType/AlgorithmID enumeration in zuse_p2.xsd -> hashlib name
     CHECKSUM_ALGORITHMS = {"SHA256": "sha256", "SHA512": "sha512"}
@@ -118,7 +107,7 @@ class Attachment(USP_MP_Base):
 
     @property
     def sanitized_filename(self) -> str:
-        return self.sanitize_fname(self.filename, self.mimetype)
+        return sanitize_filename(self.filename, self.mimetype)
 
     @property
     def hash(self) -> tuple[str, bytes]:

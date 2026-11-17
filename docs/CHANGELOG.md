@@ -8,6 +8,7 @@ Changes since `1.0.20260224` (the version number has not been bumped; commits da
 
 ### Added
 
+- `usp_mp.util` with `sanitize_filename(name, mime)` and `unique_path(directory, filename)`.
 - CLI option `--client-password-file PATH`.
 - Demo script `--save` option: saves each delivery's attachments into a numbered directory and marks the delivery as read only after saving.
 - `uspmp` console script (`[project.scripts]`), installed with the package. The CLI now lives in `src/usp_mp/cli.py`.
@@ -18,6 +19,7 @@ Changes since `1.0.20260224` (the version number has not been bumped; commits da
 
 ### Changed
 
+- `Attachment.sanitized_filename` produces different, cleaner names: runs of unsafe characters (including underscores) collapse to one `_`, accents fold to ASCII (`März` → `marz`), the stem is capped at 100 characters, and a matching original extension is kept (`scan.jpeg` stays `.jpeg`). Code that relies on the old names, such as previously saved files, sees new names.
 - CLI: `--client-certificate` is required and must exist; invalid arguments (missing `ENV:` variable, bad `--download` directory) are usage errors with exit status 2. Runtime errors print a single `uspmp: error: …` line and exit with status 1 instead of a traceback (`--debug` shows it). A non-empty literal `--client-password` prints a warning.
 - Clearer password prompt in the CLI (names the certificate file).
 - `howto.md` moved into `docs/`.
