@@ -1,6 +1,6 @@
 # Project critique: usp-mp
 
-Review of a small Python client for the *Mein Postkorb* SOAP/REST service. First written at commit `9085f5f`, updated against `3c10a6f`. The core design is sound (`adapter` → `mail`, `Mailbox → Delivery → Attachment`), but it is early-stage code with real bugs, a key-handling weakness, and no tests.
+Review of a small Python client for the *Mein Postkorb* SOAP/REST service. First written at commit `9085f5f`, and kept up to date as findings were fixed. The core design is sound (`adapter` → `mail`, `Mailbox → Delivery → Attachment`), but it is early-stage code with real bugs, a key-handling weakness, and no tests.
 
 Status markers: **[fixed]** resolved since the first review, **[open]** still applies. Since 2026-11-17, findings are also checked against the demo (TEST) service with `tests/test_demo.py` (needs your own client certificate; see README). Other findings come from reading the code, the bundled WSDL/XSD schemas and certificate, and the vendor HowTo. Items marked *verify* should be confirmed empirically.
 
