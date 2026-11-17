@@ -31,7 +31,7 @@ def setup_logging():
     })
 
 def main():
-    parser = argparse.ArgumentParser(description='Query and download deliveries from the Austrian Unternehmens-Service-Portal — Mein Postfach service.')
+    parser = argparse.ArgumentParser(description='Query and download deliveries from the Austrian Unternehmensserviceportal — Mein Postkorb service.')
     parser.add_argument('--client-certificate', help='Path to the .p12 certificate bundle file')
     parser.add_argument('--client-password', help='Password for the .p12 file (prompts if not provided, pass empty string for no password, use ENV:var_name for reading from environment)')
     parser.add_argument('--save', action='store_true', help='Save documents locally', default=False)
@@ -44,7 +44,7 @@ def main():
 
     dest = Path(args.download)
     if not dest.is_dir():
-        raise ValueError(f"{args.download} ist not a directory")
+        raise ValueError(f"{args.download} is not a directory")
 
     # Prompt for password if not provided
     p12_pass = args.client_password
@@ -89,4 +89,4 @@ def main():
     return 0
 
 if __name__ == "__main__":
-    SystemExit(main())
+    raise SystemExit(main())
