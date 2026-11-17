@@ -74,7 +74,8 @@ with Mailbox(p12_path, p12_pass, prod=False) as mbox:
 `Mailbox.deliveries()` yields `Delivery` objects.
 
 - `all=True` returns all deliveries in the mailbox, paging through it 1000 at a time.
-- `all=False` returns unread deliveries only. The service can't page these, so at most 1000 are returned per call, and a warning is logged (logger `usp_mp.mail`) when there are more. Close the processed deliveries and call again for the rest. On the demo service, the limit is applied to the whole mailbox before unread deliveries are picked, so fewer may come back; the same warning covers that.
+- `all=False` returns unread deliveries only, but with a service limitation (on both the demo and production service): the service looks for unread deliveries only among the first 1000 deliveries of the *whole* mailbox, read ones included, and offers no way to look further. In a mailbox with more than 1000 deliveries, unread ones outside that window are not returned. Closing deliveries doesn't change that; deleting processed ones does. The library logs a warning (logger `usp_mp.mail`) whenever the service reports more unread deliveries than it returned.
+- **For unattended retrieval,** keep the mailbox small by deleting deliveries once they're processed (`delivery.close(delete=True)`), or use `all=True` and keep track of processed delivery IDs yourself. `uspmp --save` closes deliveries but doesn't delete them.
 - `limit=N` caps the number of deliveries returned.
 - The delivery IDs are queried when `deliveries()` is called; each delivery's details are fetched as you iterate. So closing or deleting deliveries inside the loop is safe and doesn't skip any.
 

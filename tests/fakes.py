@@ -4,9 +4,11 @@ Responses are real zeep objects built from the bundled WSDL's own response
 elements, so a fake that uses a field the real schema doesn't have fails at
 construction, instead of drifting away from what the service actually returns.
 
-Server behaviour follows the vendor HowTo (docs/Mein_Postkorb_AutomatischeAbholung_HowTo.txt):
-unknown delivery IDs yield an ``Error`` with code ``000``, a failed attachment
-download is an HTTP 400, and ``Limit`` is capped at 1000 (per the XSD).
+Server behaviour follows the vendor HowTo (docs/Mein_Postkorb_AutomatischeAbholung_HowTo.txt)
+and what the demo and production services do: unknown delivery IDs yield an
+``Error`` with code ``000``, a failed attachment download is an HTTP 400,
+``Limit`` is capped at 1000 (per the XSD), and a new-only query applies its
+``Limit`` to the whole mailbox before picking the unread deliveries (critique B12).
 """
 
 from __future__ import annotations
@@ -147,18 +149,22 @@ class FakeService:
 
         kind = selector._xsd_type.name
         if kind == "AllDeliveriesType":
+            limit = min(selector.Paging.Limit or 100, SERVER_MAX_LIMIT)
+            start = selector.Paging.Start or 0
             matching = list(self.deliveries)
-            start, limit = selector.Paging.Start or 0, selector.Paging.Limit
+            page = matching[start:start + limit]
         elif kind == "NewDeliveriesOnlyType":
+            limit = min(selector.Limit or 100, SERVER_MAX_LIMIT)
             matching = [i for i, d in self.deliveries.items() if not d.read]
-            start, limit = 0, selector.Limit
+            # Like the real service: the window is the first `limit` deliveries of the
+            # whole mailbox; HitCount still counts all unread ones (critique B12)
+            page = [i for i in list(self.deliveries)[:limit] if not self.deliveries[i].read]
         else:
             raise AssertionError(f"unexpected query selector {kind}")
 
-        limit = min(limit or 100, SERVER_MAX_LIMIT)
         return self._response(
             "QueryDeliveriesResponse",
-            ResultsList={"HitCount": len(matching), "DeliveryID": matching[start:start + limit]},
+            ResultsList={"HitCount": len(matching), "DeliveryID": page},
         )
 
     def GetDelivery(self, delivery_id, Version=None):

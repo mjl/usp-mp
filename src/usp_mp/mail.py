@@ -201,10 +201,16 @@ class Mailbox:
         selector = self.uspmp.types.NewDeliveriesOnlyType(Limit=requested)  # pyright: ignore[reportCallIssue]
         hit_count, ids = self._query(conn, selector)
         if hit_count > len(ids) and (limit is None or len(ids) < limit):
+            # The service applies Limit to the whole mailbox (read and unread) and only
+            # then picks the unread deliveries, and new-only queries have no offset
+            # (critique B12, confirmed on demo and production). Unread deliveries outside that window are unreachable this
+            # way; closing doesn't move them into it, deleting older ones does.
             logger.warning(
-                "%d new deliveries, but only %d returned (the service can't page new-only queries); "
-                "close the processed deliveries and query again for the rest",
-                hit_count, len(ids),
+                "%d new deliveries, but only %d returned: the service looks for unread deliveries "
+                "only among the first %d deliveries of the whole mailbox. Delete processed "
+                "deliveries (closing is not enough), or use deliveries(all=True) and keep track "
+                "of processed delivery IDs yourself",
+                hit_count, len(ids), requested,
             )
         return ids
 

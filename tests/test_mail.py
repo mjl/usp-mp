@@ -321,6 +321,34 @@ def test_new_only_is_capped_and_warns(mailbox, service, caplog):
     assert "1200 new deliveries, but only 1000 returned" in caplog.text
 
 
+def test_unread_mail_behind_1000_read_deliveries_is_invisible(mailbox, service, caplog):
+    """Critique B12 (confirmed on demo and production): the new-only window is the first
+    1000 deliveries of the whole mailbox, so closing old mail never brings newer unread
+    mail into view."""
+    service.add_deliveries(1000, read=True)
+    late = service.add_deliveries(5)
+
+    with caplog.at_level("WARNING", logger="usp_mp.mail"):
+        assert list(mailbox.deliveries(all=False)) == []
+
+    assert "5 new deliveries, but only 0 returned" in caplog.text
+    assert "Delete processed deliveries (closing is not enough)" in caplog.text
+    # all=True still sees them
+    assert [d.delivery_id for d in late] == ids(mailbox.deliveries(all=True))[-5:]
+
+
+def test_deleting_old_mail_brings_unread_mail_into_view(fake_adapters, service):
+    from usp_mp.mail import Mailbox
+
+    old = service.add_deliveries(1000, read=True)
+    late = service.add_delivery()
+    for d in old[:1]:
+        del service.deliveries[d.delivery_id]  # e.g. a previous run used close(delete=True)
+
+    with Mailbox("fake.p12", "pw") as mbox:
+        assert ids(mbox.deliveries(all=False)) == [late.delivery_id]
+
+
 def test_new_only_with_limit_does_not_warn(mailbox, service, caplog):
     service.add_deliveries(20)
 

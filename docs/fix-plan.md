@@ -16,7 +16,7 @@ These come from the bundled schemas and certificate, not from the live service:
 
 Run with `tests/test_demo.py` and a real client certificate:
 
-- Paging behaves as the schema says: `Start`/`Limit` slices, `HitCount` is the total, and pages past the end are empty. New-only queries are capped by `Limit` (`HitCount` 3, `Limit` 1, one ID). This confirms the 2.3 design.
+- Paging behaves as the schema says: `Start`/`Limit` slices, `HitCount` is the total, and pages past the end are empty. New-only queries are capped by `Limit` (`HitCount` 3, `Limit` 1, one ID), and their `Limit` applies to the whole mailbox before the unread filter (critique B12; the maintainer confirmed production does the same). This confirms the 2.3 design.
 - The service validates requests (`Limit` 0 or 1001 → `Validation error` fault), and it accepts zeep's `<Query xsi:type=…>` (B11).
 - Checksums: `SHA512` on all attachments, `bytes` values, and the declared `Size` matches.
 - Unknown UUIDs: `000` / "Unkown uuid." for get, close and delete. Unknown attachment: HTTP 400. Close and delete on known IDs return `Success`; the demo ignores them.
