@@ -56,6 +56,20 @@ def write_atomic(path: Path | str, data: bytes) -> None:
     os.replace(part, path)
 
 
+def fsync_dir(directory: Path | str) -> None:
+    """Flush a directory's entries to disk, so that renames into it survive a crash.
+
+    A no-op on platforms that can't open directories (Windows).
+    """
+    if os.name == "nt":
+        return
+    fd = os.open(directory, os.O_RDONLY)
+    try:
+        os.fsync(fd)
+    finally:
+        os.close(fd)
+
+
 def unique_path(directory: Path | str, filename: str) -> Path:
     """`directory / filename`, or with `_1`, `_2`, ... appended to the stem if that exists."""
     directory = Path(directory)

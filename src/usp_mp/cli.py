@@ -7,7 +7,11 @@ from pathlib import Path
 
 from usp_mp.errors import UspMpError
 from usp_mp.mail import Mailbox
-from usp_mp.util import write_atomic
+from usp_mp.util import fsync_dir, write_atomic
+
+class SaveVerificationError(Exception):
+    """A saved file doesn't contain exactly the downloaded bytes."""
+
 
 class _CliFormatter(logging.Formatter):
     """'uspmp: warning: ...', matching the CLI's own 'uspmp: error: ...' lines."""
@@ -53,6 +57,10 @@ def build_parser() -> argparse.ArgumentParser:
     password.add_argument('--client-password-file', metavar='PATH', help='Read the .p12 password from the first line of this file')
     parser.add_argument('--save', action='store_true', help='Save documents locally', default=False)
     parser.add_argument('--download', help='Directory to store downloads', default='.')
+    parser.add_argument('--delete', action='store_true', default=False, help=(
+        'With --save: delete each delivery from the mailbox once it and all its attachments are '
+        'saved and verified on disk. A delivery with any download or save problem is kept'
+    ))
     parser.add_argument('--all', action='store_true', help='Fetch all deliveries (or just new)', default=False)
     parser.add_argument('--prod', action='store_true', help='Use production endpoint (defaults to demo service)', default=False)
     parser.add_argument('--debug', action='store_true', help='Trace service calls and show full tracebacks', default=False)
@@ -94,6 +102,8 @@ def main(argv: list[str] | None = None) -> int:
     dest = Path(args.download)
     if not dest.is_dir():
         parser.error(f"download directory {args.download} is not a directory")
+    if args.delete and not args.save:
+        parser.error("--delete requires --save (deliveries are only deleted after they are saved)")
 
     p12_pass = read_password(parser, args)
 
@@ -131,9 +141,10 @@ def process_delivery(args: argparse.Namespace, dest: Path, post_idx: int, delive
     if args.save:
         save_path.mkdir(exist_ok=True)
 
+    saved: list[tuple[Path, bytes]] = []
     for att_idx, attachment in enumerate(delivery.attachments()):
         print(f"   [{att_idx:02}] {attachment} {attachment.mimetype}")
-        b = attachment.content(verify_checksum=True)
+        b = attachment.content(verify_checksum=True)  # raises on a checksum mismatch
         if att_idx == 0 and attachment.mimetype == 'text/plain' and len(b) < 1000:
             print("     -----")
             for line in b.split(b'\n'):
@@ -142,10 +153,21 @@ def process_delivery(args: argparse.Namespace, dest: Path, post_idx: int, delive
         if args.save:
             fname = save_path / f"{att_idx}_{attachment.sanitized_filename}"
             write_atomic(fname, b)
+            saved.append((fname, b))
             print("        Saved as", fname)
 
-    if args.save:  # Only mark as read if saved
-        delivery.close()
+    if args.save:
+        # Only reached when every attachment was downloaded, verified and written.
+        # Make the renames durable and check the files before touching the mailbox.
+        fsync_dir(save_path)
+        for fname, data in saved:
+            if fname.read_bytes() != data:
+                raise SaveVerificationError(f"{fname} doesn't contain the downloaded data; delivery kept")
+        if args.delete:
+            delivery.close(delete=True)  # the service requires close before delete
+            print("        Deleted from the mailbox")
+        else:
+            delivery.close()  # mark as read
 
     print("\n=================================")
 

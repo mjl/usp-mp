@@ -4,7 +4,7 @@ import os
 
 import pytest
 
-from usp_mp.util import MAX_STEM_LENGTH, sanitize_filename, unique_path, write_atomic
+from usp_mp.util import MAX_STEM_LENGTH, fsync_dir, sanitize_filename, unique_path, write_atomic
 
 
 @pytest.mark.parametrize(
@@ -95,3 +95,18 @@ def test_write_atomic_failure_keeps_old_file(tmp_path, monkeypatch):
 
     assert target.read_bytes() == b"old"  # never truncated or half-written
     assert (tmp_path / "a.pdf.part").read_bytes() == b"new"
+
+
+def test_fsync_dir(tmp_path):
+    (tmp_path / "a").write_bytes(b"x")
+
+    fsync_dir(tmp_path)  # must not raise
+    fsync_dir(str(tmp_path))
+
+
+def test_fsync_dir_missing_directory(tmp_path):
+    if os.name == "nt":
+        pytest.skip("no-op on Windows")
+    with pytest.raises(FileNotFoundError):
+        fsync_dir(tmp_path / "missing")
+

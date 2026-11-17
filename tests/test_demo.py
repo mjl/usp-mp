@@ -483,6 +483,21 @@ def test_cli_lists_and_saves(demo_credentials, monkeypatch, capsys, tmp_path, de
     assert (tmp_path / HOWTO_ATTACHMENT_EXAMPLE[0] / "1_example.pdf").read_bytes().startswith(b"%PDF-")
 
 
+def test_cli_save_and_delete(demo_credentials, monkeypatch, capsys, tmp_path, deliveries):
+    """--delete against the demo, which acknowledges close/delete without changing its data."""
+    monkeypatch.setenv("USP_MP_TEST_P12_PASS", demo_credentials.p12_pass)
+
+    rc = cli.main([
+        "--client-certificate", demo_credentials.p12_path,
+        "--client-password", "ENV:USP_MP_TEST_P12_PASS",
+        "--all", "--save", "--delete", "--download", str(tmp_path),
+    ])
+
+    assert rc == 0
+    assert capsys.readouterr().out.count("Deleted from the mailbox") == len(deliveries)
+    assert sorted(p.name for p in tmp_path.iterdir()) == sorted(HOWTO_ALL_IDS)
+
+
 def test_cli_rejects_wrong_password(demo_credentials, capsys):
     rc = cli.main(["--client-certificate", demo_credentials.p12_path, "--client-password", "definitely-wrong"])
 

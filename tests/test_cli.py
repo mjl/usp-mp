@@ -271,3 +271,115 @@ def test_setup_logging_is_idempotent():
     assert len(logging.getLogger("usp_mp").handlers) == 1
     assert logging.getLogger("usp_mp").level == logging.DEBUG
 
+
+# --- --delete -------------------------------------------------------------------------
+
+def save_delete_args(cert, out_dir, *extra):
+    return ("--client-certificate", cert, "--client-password", "", "--save", "--delete",
+            "--download", str(out_dir), *extra)
+
+
+@pytest.fixture
+def out_dir(tmp_path):
+    d = tmp_path / "out"
+    d.mkdir()
+    return d
+
+
+def test_delete_requires_save(capsys, cert):
+    err = usage_error(capsys, "--client-certificate", cert, "--client-password", "", "--delete")
+
+    assert "--delete requires --save" in err
+
+
+def test_delete_after_successful_save(capsys, cert, out_dir, fake_adapters, service):
+    from fakes import FakeAttachment
+
+    first = service.add_delivery()
+    second = service.add_delivery(attachments=[
+        FakeAttachment(b"body\n", "mailbody", "text/plain"), FakeAttachment(b"%PDF-1.7", "Bescheid.pdf"),
+    ])
+
+    assert run_cli(*save_delete_args(cert, out_dir)) == 0
+
+    assert service.deliveries == {}
+    assert (out_dir / first.delivery_id / "0_mailbody.txt").read_bytes() == b"Mail body 1\n"
+    assert (out_dir / second.delivery_id / "1_bescheid.pdf").read_bytes() == b"%PDF-1.7"
+    # the service requires CloseDelivery before DeleteDelivery
+    ops = [c[0] for c in service.calls if c[0] in ("CloseDelivery", "DeleteDelivery")]
+    assert ops == ["CloseDelivery", "DeleteDelivery"] * 2
+    assert capsys.readouterr().out.count("Deleted from the mailbox") == 2
+
+
+def test_checksum_failure_keeps_delivery(capsys, cert, out_dir, fake_adapters, service):
+    from fakes import FakeAttachment
+
+    fake = service.add_delivery(attachments=[
+        FakeAttachment(b"body\n", "mailbody", "text/plain"),
+        FakeAttachment(b"%PDF-1.7", "Bescheid.pdf", checksum=b"\0" * 32),  # corrupted download
+    ])
+
+    assert run_cli(*save_delete_args(cert, out_dir)) == 1
+
+    assert fake.delivery_id in service.deliveries and not fake.read
+    assert service.calls_to("CloseDelivery") == service.calls_to("DeleteDelivery") == []
+    assert "do not match checksum" in capsys.readouterr().err
+
+
+def test_write_failure_keeps_delivery(capsys, cert, out_dir, fake_adapters, service, monkeypatch):
+    fake = service.add_delivery()
+
+    def disk_full(path, data):
+        raise OSError(28, "No space left on device")
+
+    monkeypatch.setattr(cli, "write_atomic", disk_full)
+
+    assert run_cli(*save_delete_args(cert, out_dir)) == 1
+
+    assert fake.delivery_id in service.deliveries and not fake.read
+    assert "No space left on device" in capsys.readouterr().err
+
+
+def test_verification_failure_keeps_delivery(capsys, cert, out_dir, fake_adapters, service, monkeypatch):
+    """A file that doesn't read back as the downloaded bytes blocks deletion."""
+    from usp_mp.util import write_atomic
+
+    fake = service.add_delivery()
+    monkeypatch.setattr(cli, "write_atomic", lambda path, data: write_atomic(path, data[:-1]))  # silently truncated
+
+    assert run_cli(*save_delete_args(cert, out_dir)) == 1
+
+    assert fake.delivery_id in service.deliveries and not fake.read
+    assert "doesn't contain the downloaded data; delivery kept" in capsys.readouterr().err
+
+
+def test_failure_on_later_delivery_keeps_earlier_deletions(cert, out_dir, fake_adapters, service):
+    from fakes import FakeAttachment
+
+    good = service.add_delivery()
+    bad = service.add_delivery(attachments=[FakeAttachment(b"x", "a.pdf", checksum=b"\0" * 32)])
+
+    assert run_cli(*save_delete_args(cert, out_dir)) == 1
+
+    assert good.delivery_id not in service.deliveries  # fully saved first, so deleted
+    assert bad.delivery_id in service.deliveries and not bad.read
+
+
+def test_delete_api_error_is_reported(capsys, cert, out_dir, fake_adapters, service):
+    fake = service.add_delivery()
+    service.fail_next("DeleteDelivery", "000", "Unkown uuid.")
+
+    assert run_cli(*save_delete_args(cert, out_dir)) == 1
+
+    assert (out_dir / fake.delivery_id / "0_mailbody.txt").exists()
+    assert "DeleteDelivery failed: [000]" in capsys.readouterr().err
+
+
+def test_save_without_delete_only_marks_read(cert, out_dir, fake_adapters, service):
+    fake = service.add_delivery()
+
+    assert run_cli("--client-certificate", cert, "--client-password", "", "--save", "--download", str(out_dir)) == 0
+
+    assert fake.read and fake.delivery_id in service.deliveries
+    assert service.calls_to("DeleteDelivery") == []
+
