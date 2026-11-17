@@ -57,7 +57,7 @@ Consider a separate, longer read timeout for large attachments: `timeout=(10, 60
 ### 1.3 Builtin shadowing [B6] — decided: leave `all=` as is
 
 - `hash` (local): fixed by 1.2.
-- `all` (parameter of `Mailbox.deliveries`): this is **public API**, used in the docs and the CLI. The shadowing is local and harmless, so the recommendation is to leave it. If you want it gone, add `new_only: bool = False` and keep `all=` working with a `DeprecationWarning` for one release. **Decision needed** (see the end of this plan).
+- `all` (parameter of `Mailbox.deliveries`): this is **public API**, used in the docs and the CLI. The shadowing is local and harmless, so the recommendation is to leave it. If you want it gone, add `new_only: bool = False` and keep `all=` working with a `DeprecationWarning` for one release. **Decided:** leave it.
 
 ### 1.4 CLI argument handling [B7, S3] — done (literal password kept, with a warning)
 
@@ -224,7 +224,7 @@ The recommendation is (b). The breaking changes listed in the CHANGELOG (CLI scr
 
 ### 5.5 Vendor documents in `docs/` [P6] — done: kept, with an origin note (`docs/api_docs/README.md`)
 
-**Decision needed.** The README already links the official HowTo. Options:
+**Decided:** keep the files, with an origin note. The options were:
 - Keep the files and add a note on their origin and that they are reproduced for reference.
 - Remove the PDF, `.txt` and zip from HEAD and rely on the link. They stay in git history; purging history needs a rewrite and force-push, which is not recommended for this alone.
 
