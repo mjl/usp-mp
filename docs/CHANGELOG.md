@@ -2,7 +2,17 @@
 
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/). The repository has no release tags; versions are the value of `usp_mp.__version__` at the time, and dates come from the git history.
 
-## [Unreleased]
+## [1.1.20261117] - 2026-11-17
+
+Changes since `1.0.20261117`: Phases 0–5 of `docs/fix-plan.md` (error types, pagination, the `p:Person` schema patch, typed accessors, logging, packaging, and documentation), plus the demo-service test suite.
+
+**Breaking changes** (the version scheme doesn't signal them, so they are listed here):
+
+- `uspmp --save` writes one directory per delivery ID instead of `0/`, `1/`, ….
+- Certificate problems raise `usp_mp.CertificateError`, which is not a `RuntimeError`. API, checksum and mailbox-state errors are new classes but still match `ValueError`/`RuntimeError`. Error messages changed (for example `GetDelivery failed: [000] Unkown uuid.`).
+- `Mailbox.deliveries()` sends its query when called, not on first iteration. `all=False` now returns up to 1000 deliveries (previously 100).
+- `USP_MP_Adapter.read_wsdl_types()` is replaced by `load_wsdl()`, and `adapter.types` is a per-instance `QueryTypes` (no longer class-level).
+- The CLI's output changed: each listing line ends with `… from <sender>`, and library warnings appear on stderr as `uspmp: warning: …`.
 
 ### Added
 
@@ -14,7 +24,7 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/). The repo
 - `usp_mp.util.write_atomic(path, data)`.
 - `Mailbox.deliveries(..., limit=N)` caps the number of deliveries returned.
 - Exception hierarchy in `usp_mp.errors`, exported from `usp_mp`: `UspMpError`, `CertificateError`, `ApiError` (`.code`, `.message`, `.operation`), `ChecksumError` and `MailboxStateError`. `Mailbox` is now exported from `usp_mp` too.
-- Demo-service test suite (`tests/test_demo.py`, marker `demo`): tests against the Mein Postkorb TEST endpoint, plus strict `xfail` tests for the known `CorporateBody` parsing gap. Besides invariants, they compare the fixed demo data against the values documented in the vendor HowTo and against a golden snapshot (`tests/data/demo_snapshot.json`, re-recorded with `--update-demo-snapshot`). Each person running them provides their own client certificate and password via `--p12=` / `--p12-password-file=` / `--p12-password=` or `USP_MP_P12` / `USP_MP_P12_PASS_FILE` / `USP_MP_P12_PASS`; without a certificate they are skipped. See README "Tests against the demo service".
+- Demo-service test suite (`tests/test_demo.py`, marker `demo`): tests against the Mein Postkorb TEST endpoint, including strict parsing of every live response as a schema-drift check. Besides invariants, they compare the fixed demo data against the values documented in the vendor HowTo and against a golden snapshot (`tests/data/demo_snapshot.json`, re-recorded with `--update-demo-snapshot`). Each person running them provides their own client certificate and password via `--p12=` / `--p12-password-file=` / `--p12-password=` or `USP_MP_P12` / `USP_MP_P12_PASS_FILE` / `USP_MP_P12_PASS`; without a certificate they are skipped. See README "Tests against the demo service".
 
 ### Changed
 
