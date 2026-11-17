@@ -3,6 +3,8 @@ name = "usp-mp"
 dynamic = ["version"]
 description = "Add your description here"
 readme = "README.md"
+license = "BSD-3-Clause"
+license-files = ["LICENSE"]
 authors = [
     { name = "Martin J. Laubach", email = "mjl@laubach.at" }
 ]
@@ -29,7 +31,7 @@ markers = [
 ]
 
 [build-system]
-requires = ["setuptools>=64.0"]
+requires = ["setuptools>=77.0"]  # PEP 639 license expression
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.package-data]

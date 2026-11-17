@@ -173,9 +173,9 @@ Check the actual field shapes against demo data first, because the `Person`/`Cor
 
 `pyproject.toml`: `description = "Client for the Austrian USP 'Mein Postkorb' automatic retrieval (Automatische Abholung) service"`. Also add `keywords`, `classifiers` (Python 3.11–3.14, OS-independent) and `[project.urls]` if the repository should be public.
 
-### 5.2 Licence [P2]
+### 5.2 Licence [P2] — done: BSD-3-Clause
 
-**Decision needed:** which licence. Options: MIT (simplest), Apache-2.0 (patent grant), or EUPL-1.2 (common for Austrian/EU public-sector-adjacent software). Then add `LICENSE` and set `license = "<SPDX id>"` plus `license-files = ["LICENSE"]` in `pyproject.toml`. That PEP 639 form needs `setuptools>=77`, so bump `build-system.requires` to match.
+Decided: BSD 3-Clause. Originally considered: MIT (simplest), Apache-2.0 (patent grant), or EUPL-1.2 (common for Austrian/EU public-sector-adjacent software). Then add `LICENSE` and set `license = "<SPDX id>"` plus `license-files = ["LICENSE"]` in `pyproject.toml`. That PEP 639 form needs `setuptools>=77`, so bump `build-system.requires` to match.
 
 ### 5.3 CA certificate documentation [P3]
 
@@ -188,9 +188,9 @@ openssl x509 -in src/usp_mp/certs/brz_ca.cer -noout -subject -issuer -enddate -f
 Add a test that **warns** (does not fail) when the certificate expires within a year. A failing date-based test would be a time bomb.
 **Open question:** the source of `brz_ca.cer` isn't recorded anywhere in the repo; fill it in when known.
 
-### 5.4 Versioning [P4]
+### 5.4 Versioning [P4] — decided: keep the current scheme
 
-**Decision needed.** Options:
+Decided: keep `1.0.YYYYMMDD`, bumped by hand. Options that were considered:
 - (a) Keep date-based versions, but use PEP 440 CalVer `2026.11.17` instead of the `1.0.` prefix. It needs a manual bump, and the `1.0.x` → `2026.x` change sorts correctly (higher).
 - (b) Semantic versioning (`1.1.0`, …), single-sourced from git tags via `setuptools-scm`.
 
@@ -202,7 +202,7 @@ The recommendation is (b). The breaking changes listed in the CHANGELOG (CLI scr
 - Keep the files and add a note on their origin and that they are reproduced for reference.
 - Remove the PDF, `.txt` and zip from HEAD and rely on the link. They stay in git history; purging history needs a rewrite and force-push, which is not recommended for this alone.
 
-Also exclude `docs/api_docs/` from any sdist (`MANIFEST.in` `prune docs/api_docs`), so the vendor material is never redistributed on PyPI even if it is kept in the repo.
+~~Also exclude `docs/api_docs/` from any sdist.~~ Not needed: a test build showed setuptools does not put `docs/` into the sdist at all.
 
 ## Suggested PR sequence
 
@@ -223,7 +223,7 @@ After each PR, update `critique.md` status markers and `CHANGELOG.md`.
 1. ~~Keep `deliveries(all=...)`, or rename it to `new_only` with a deprecation (1.3)?~~ Decided: keep it.
 2. ~~Eventually remove the literal `--client-password` value (1.4)?~~ Decided: keep it, with the warning.
 3. Keep `connection()`, or move to `Mailbox` as a context manager (3.2)?
-4. Which licence (5.2)?
-5. Which versioning scheme (5.4)?
+4. ~~Which licence (5.2)?~~ Decided: BSD 3-Clause.
+5. ~~Which versioning scheme (5.4)?~~ Decided: keep `1.0.YYYYMMDD`.
 6. Keep or remove the vendor documents (5.5)?
 7. Where did `brz_ca.cer` come from (5.3)?

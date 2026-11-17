@@ -8,6 +8,7 @@ Changes since `1.0.20260224` (the version number has not been bumped; commits da
 
 ### Added
 
+- BSD 3-Clause licence (`LICENSE`, declared in the package metadata).
 - `usp_mp.util` with `sanitize_filename(name, mime)` and `unique_path(directory, filename)`.
 - CLI option `--client-password-file PATH`.
 - Demo script `--save` option: saves each delivery's attachments into a numbered directory and marks the delivery as read only after saving.

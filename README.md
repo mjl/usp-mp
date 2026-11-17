@@ -51,6 +51,10 @@ Integration tests against the **demo** service are skipped unless a client certi
 USP_MP_P12=/path/to/certificate.p12 USP_MP_P12_PASS=... pytest -m demo
 ```
 
+# License
+
+BSD 3-Clause; see [LICENSE](LICENSE).
+
 # References
 
 * Austrian [Unternehmensserviceportal](https://www.usp.gv.at/)

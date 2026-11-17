@@ -48,11 +48,12 @@ All **[open]** unless marked.
 - **[fixed] `.gitignore`** rewritten: stray `:` and merged pattern removed; the blanket `.*` rule (which would have hidden e.g. `.github/`) and unused template sections dropped; `.jj/` added; `*.cer` no longer blocks the bundled CA cert (`!src/usp_mp/certs/*.cer`).
 - **[fixed] Typos and naming** ("ist not a directory", "rom private_key", "instanciate", "Mein Postfach", "Unternehmer-Service-Portal", "Postbevollmaechtigter", "return" → "returns", "meta data").
 - **[open]** `description = "Add your description here"` in `pyproject.toml` is still the template placeholder.
-- **[open]** No licence file.
+- **[fixed]** No licence file. Now BSD 3-Clause: `LICENSE`, plus `license = "BSD-3-Clause"` and `license-files` in `pyproject.toml` (PEP 639, so `setuptools>=77`); the built wheel and sdist both carry it.
 - **[open]** `brz_ca.cer` is pinned and shipped with no note on source, fingerprint or expiry. It is `CN=BRZ-StammCA-2-02, O=Bundesrechenzentrum GmbH`, valid until **2038-01-12**, so rotation is not urgent; still document its details, origin, and how to refresh it.
-- **[open]** Version `1.0.20260224` mixes semver and CalVer and is hand-edited.
+- **[won't fix]** Version `1.0.20260224` mixes semver and CalVer and is hand-edited. Keeping the scheme is a maintainer decision (2026-11-17); remember to bump `__version__` and rename the CHANGELOG's *Unreleased* heading when releasing.
 - **[open]** The library has no `logging`; debug logging is configured only inside the CLI module.
-- **[open]** `docs/` contains the vendor PDF, a `.txt` copy of it, and a zip. Useful reference, but redistribution rights are unclear; consider linking instead.
+- **[open]** `docs/` contains the vendor PDF, a `.txt` copy of it, and a zip. Useful reference, but redistribution rights are unclear; consider linking instead. They are not in the sdist or wheel (checked with a build), so this only concerns the repository.
+- **[open]** The sdist includes `tests/test_*.py` (setuptools' default) but not `tests/conftest.py` or `tests/fakes.py`, so the tests cannot run from an unpacked sdist. New finding from a test build. Either include the whole `tests/` directory (`MANIFEST.in`: `graft tests`, then `global-exclude __pycache__ *.py[cod]`) or exclude it entirely.
 
 ## Testing
 
