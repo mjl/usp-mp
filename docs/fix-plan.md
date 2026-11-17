@@ -222,7 +222,7 @@ Decided: keep `1.0.YYYYMMDD`, bumped by hand. Options that were considered:
 
 The recommendation is (b). The breaking changes listed in the CHANGELOG (CLI script removal, `--save` layout) are exactly what semver communicates. Whichever you choose, start tagging releases and rename the CHANGELOG's *Unreleased* heading when you tag.
 
-### 5.5 Vendor documents in `docs/` [P6]
+### 5.5 Vendor documents in `docs/` [P6] — done: kept, with an origin note (`docs/api_docs/README.md`)
 
 **Decision needed.** The README already links the official HowTo. Options:
 - Keep the files and add a note on their origin and that they are reproduced for reference.
@@ -251,5 +251,5 @@ After each PR, update `critique.md` status markers and `CHANGELOG.md`.
 3. ~~Keep `connection()`, or move to `Mailbox` as a context manager (3.2)?~~ Decided: mandatory `with Mailbox(...) as mbox:`.
 4. ~~Which licence (5.2)?~~ Decided: BSD 3-Clause.
 5. ~~Which versioning scheme (5.4)?~~ Decided: keep `1.0.YYYYMMDD`.
-6. Keep or remove the vendor documents (5.5)?
+6. ~~Keep or remove the vendor documents (5.5)?~~ Decided: keep, with an origin note.
 7. Where did `brz_ca.cer` come from (5.3)?

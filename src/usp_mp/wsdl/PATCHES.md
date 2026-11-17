@@ -1,6 +1,12 @@
 # Local changes to the vendor WSDL/XSD files
 
-The files in this directory are copies of the Mein Postkorb *Automatische Abholung* WSDL and schemas (version 2.4.0-004). They are bundled because the service does not serve `?wsdl`. This file records every local change, so the changes can be re-applied when the files are replaced with a newer vendor version.
+The files in this directory are copies of the Mein Postkorb *Automatische Abholung* WSDL and schemas (version 2.4.0-004), taken from BRZ's Maven example project (`docs/api_docs/automatische-abholung-beispielprojekt.zip`, see `docs/api_docs/README.md`). They are bundled because the service does not serve `?wsdl`. This file records every local change, so the changes can be re-applied when the files are replaced with a newer vendor version.
+
+`zuseaa_p2.wsdl`, `zuse_p2.xsd`, `zusetypes_p2.xsd` and `W3C-XMLDSig.xsd` are byte-identical to the example project. `zuseaa_p2.xsd` (changes 0 and 1) and `zuse_mypersondata_en_p2.xsd` and `zuse_p2.xsd` (change 1) are not.
+
+## 0. Flattened directory layout
+
+The example project keeps the WSDL and `zuseaa_p2.xsd` in `wsdl/`, and the other schemas in `zusemsg/`. Here they all live in one directory, so in `zuseaa_p2.xsd` the three `<xs:import schemaLocation="../zusemsg/….xsd"/>` paths are shortened to the bare file names. The original file also has no trailing newline.
 
 ## 1. `p:Person` substitution group replaced by an explicit choice
 

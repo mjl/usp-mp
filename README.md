@@ -86,7 +86,7 @@ Notes:
 
 # License
 
-BSD 3-Clause; see [LICENSE](LICENSE).
+BSD 3-Clause; see [LICENSE](LICENSE). This doesn't cover the BRZ documents in `docs/` (see [docs/api_docs/README.md](docs/api_docs/README.md)). The bundled WSDL/XSDs are BRZ's service definition, with local changes listed in `src/usp_mp/wsdl/PATCHES.md`.
 
 # References
 
