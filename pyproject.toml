@@ -26,7 +26,9 @@ authors = [
 requires-python = ">=3.11"
 dependencies = [
     "zeep>=4.2",
-    "requests>=2",
+    # Floors are security fixes; the test suite passes back to requests 2.28 / urllib3 1.26.
+    "requests>=2.32.4",  # CVE-2024-47081 (.netrc credentials leak); also CVE-2024-35195
+    "urllib3>=2.8.0",    # imported directly (adapter.py); GHSA-8988-9cw3-xx77 (HTTPS proxy TLS config ignored), decompression-bomb fixes
     "cryptography>=41",
 ]
 

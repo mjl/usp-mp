@@ -6,6 +6,7 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/). The repo
 
 ### Changed
 
+- Dependencies: `requests>=2.32.4` (was `>=2`) and `urllib3>=2.8.0`, now declared explicitly since the adapter imports it. Both floors pick up security fixes (CVE-2024-47081, GHSA-8988-9cw3-xx77 and the urllib3 decompression-bomb fixes); the suite passes with exactly these versions.
 - The warning for truncated new-only results now explains the cause (the service searches only the first 1000 deliveries of the whole mailbox for unread ones, on demo and production alike) and the remedies: delete processed deliveries, since closing is not enough, or use `deliveries(all=True)` and track processed IDs. The previous text wrongly advised closing deliveries and querying again. The howto documents the limitation.
 
 ## [1.1.20261117] - 2026-11-17
