@@ -1,3 +1,6 @@
+# Copyright (c) 2026, Martin J. Laubach
+# SPDX-License-Identifier: BSD-3-Clause
+
 """Integration tests against the Mein Postkorb **demo** (TEST) service.
 
 The client certificate and its password are NOT part of this repository.

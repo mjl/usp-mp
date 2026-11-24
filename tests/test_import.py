@@ -1,4 +1,9 @@
-"""Import smoke tests. Run on the oldest supported Python (3.11) to catch B10-style regressions."""
+# Copyright (c) 2026, Martin J. Laubach
+# SPDX-License-Identifier: BSD-3-Clause
+
+"""Import smoke tests. Run on the oldest supported Python (3.11) to catch annotations that only
+import on newer versions (e.g. forward references without ``from __future__ import annotations``).
+"""
 
 import importlib
 import re

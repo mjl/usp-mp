@@ -4,6 +4,10 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/). The repo
 
 ## [Unreleased]
 
+### Added
+
+- Copyright and SPDX licence headers (`BSD-3-Clause`) in all Python files.
+
 ### Removed
 
 - The BRZ How-To PDF, its text extraction, and the example-project zip (BRZ copyright); `docs/api_docs/README.md` now links to the sources.

@@ -1,3 +1,6 @@
+# Copyright (c) 2026, Martin J. Laubach
+# SPDX-License-Identifier: BSD-3-Clause
+
 """Client-certificate (mutual TLS) handling of USP_MP_Adapter, against a local HTTPS server."""
 
 import datetime

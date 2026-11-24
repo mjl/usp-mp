@@ -1,3 +1,6 @@
+# Copyright (c) 2026, Martin J. Laubach
+# SPDX-License-Identifier: BSD-3-Clause
+
 """Behaviour of Mailbox / Delivery / Attachment against the fake service."""
 
 import datetime

@@ -1,3 +1,6 @@
+# Copyright (c) 2026, Martin J. Laubach
+# SPDX-License-Identifier: BSD-3-Clause
+
 """Exceptions raised by usp_mp.
 
 Everything derives from UspMpError, so ``except UspMpError`` catches all of

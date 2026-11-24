@@ -1,3 +1,6 @@
+# Copyright (c) 2026, Martin J. Laubach
+# SPDX-License-Identifier: BSD-3-Clause
+
 """The exception hierarchy and raise_on_error."""
 
 import pytest

@@ -1,3 +1,6 @@
+# Copyright (c) 2026, Martin J. Laubach
+# SPDX-License-Identifier: BSD-3-Clause
+
 """In-memory fake of the Mein Postkorb service, for tests without certificate or network.
 
 Responses are real zeep objects built from the bundled WSDL's own response

@@ -1,3 +1,6 @@
+# Copyright (c) 2026, Martin J. Laubach
+# SPDX-License-Identifier: BSD-3-Clause
+
 """Shared fixtures. The fakes themselves live in fakes.py.
 
 Demo-service tests (marker ``demo``, tests/test_demo.py) need a client

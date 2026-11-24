@@ -1,3 +1,5 @@
+# Copyright (c) 2026, Martin J. Laubach
+# SPDX-License-Identifier: BSD-3-Clause
 
 from .adapter import USP_MP_Adapter
 from .errors import ApiError, CertificateError, ChecksumError, MailboxStateError, UspMpError

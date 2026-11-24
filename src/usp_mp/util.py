@@ -1,3 +1,6 @@
+# Copyright (c) 2026, Martin J. Laubach
+# SPDX-License-Identifier: BSD-3-Clause
+
 """Helpers for saving attachments: safe local file names, unique paths, atomic writes."""
 
 from __future__ import annotations

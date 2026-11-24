@@ -1,3 +1,6 @@
+# Copyright (c) 2026, Martin J. Laubach
+# SPDX-License-Identifier: BSD-3-Clause
+
 """Comparison helper for the demo-data golden snapshot (tests/data/demo_snapshot.json)."""
 
 

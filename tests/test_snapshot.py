@@ -1,3 +1,6 @@
+# Copyright (c) 2026, Martin J. Laubach
+# SPDX-License-Identifier: BSD-3-Clause
+
 """The snapshot comparison helper; runs without a certificate."""
 
 from snapshot import differences

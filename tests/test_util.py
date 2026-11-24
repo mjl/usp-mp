@@ -1,3 +1,6 @@
+# Copyright (c) 2026, Martin J. Laubach
+# SPDX-License-Identifier: BSD-3-Clause
+
 """usp_mp.util: safe local file names and atomic writes for attachments."""
 
 import os

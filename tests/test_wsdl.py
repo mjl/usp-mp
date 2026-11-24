@@ -1,3 +1,6 @@
+# Copyright (c) 2026, Martin J. Laubach
+# SPDX-License-Identifier: BSD-3-Clause
+
 """The bundled WSDL/XSD files load and produce the requests the vendor HowTo documents."""
 
 import re

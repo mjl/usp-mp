@@ -1,3 +1,6 @@
+# Copyright (c) 2026, Martin J. Laubach
+# SPDX-License-Identifier: BSD-3-Clause
+
 """The bundled BRZ CA certificate (the trust anchor for the service's TLS certificate).
 
 Downloaded from the link on the USP Mein Postkorb page where client
