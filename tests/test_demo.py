@@ -6,7 +6,7 @@ Whoever runs these tests provides their own, issued for their USP account
 here is skipped. Configure it with options or environment variables; see
 tests/conftest.py and the README section "Tests against the demo service":
 
-    pytest -m demo --p12 /path/to/your.p12 --p12-password-file /path/to/password.txt
+    pytest -m demo --p12=/path/to/your.p12 --p12-password-file=/path/to/password.txt
     USP_MP_P12=/path/to/your.p12 USP_MP_P12_PASS_FILE=/path/to/password.txt pytest -m demo
 
 Always runs against the demo endpoint, never production; the `demo_mailbox`
@@ -48,7 +48,7 @@ UNKNOWN_UUID = ("000", "Unkown uuid.")  # sic, as documented by the vendor
 SANITIZED = re.compile(r"[a-z0-9-]+(_[a-z0-9-]+)*(\.[a-z0-9]+)?")
 SNAPSHOT_PATH = Path(__file__).parent / "data" / "demo_snapshot.json"
 
-# Demo data documented in docs/Mein_Postkorb_AutomatischeAbholung_HowTo.txt
+# Demo data documented in the vendor HowTo (see docs/api_docs/README.md)
 # (sample QueryDeliveriesResponse for all and for new-only deliveries, and the
 # attachment download example).
 HOWTO_ALL_IDS = [
@@ -258,7 +258,7 @@ def test_paging_beyond_end_is_empty(raw, all_ids):
 
 
 def test_new_only_is_truncated_by_limit(raw, new_ids):
-    """New-only queries can't be paged: HitCount reports the total, Limit caps the IDs (critique B2)."""
+    """New-only queries can't be paged: HitCount reports the total, Limit caps the IDs."""
     if len(new_ids) < 2:
         pytest.skip("needs at least two new deliveries in the demo data")
     r = raw.query_new(limit=1)
@@ -304,7 +304,7 @@ def test_library_warns_when_new_only_is_truncated(demo_mailbox, monkeypatch, cap
 
 @pytest.mark.parametrize(("limit", "returned"), [(1, 1), (4, 1), (5, 2), (9, 2), (10, 3)])
 def test_new_only_limit_applies_before_unread_filter(raw, limit, returned):
-    """Observed demo behaviour (critique B12): Limit caps the *whole* mailbox, then unread
+    """Observed behaviour (the same on production): Limit caps the *whole* mailbox, then unread
     deliveries are picked from that window. The new ones are positions 1, 5 and 10."""
     r = raw.query_new(limit=limit)
 
@@ -427,10 +427,10 @@ def test_library_close_and_delete(deliveries):
     deliveries[0].close(delete=True)  # raises on an API error
 
 
-# --- known schema limitation (critique S4) -----------------------------------------
+# --- p:Person substitution group (wsdl/PATCHES.md) ---------------------------------
 
 def test_sender_and_receiver_fully_parsed(deliveries):
-    """Critique S4, fixed by the schema patch in wsdl/PATCHES.md."""
+    """CorporateBody/PhysicalPerson parse completely, thanks to the schema patch in wsdl/PATCHES.md."""
     for d in deliveries:
         for contact in (d.delivery.Delivery.Sender, d.delivery.Delivery.Receiver):
             assert unparsed_elements(contact) == []  # no _raw_elements, at any depth

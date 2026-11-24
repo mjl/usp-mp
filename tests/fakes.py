@@ -4,11 +4,11 @@ Responses are real zeep objects built from the bundled WSDL's own response
 elements, so a fake that uses a field the real schema doesn't have fails at
 construction, instead of drifting away from what the service actually returns.
 
-Server behaviour follows the vendor HowTo (docs/Mein_Postkorb_AutomatischeAbholung_HowTo.txt)
+Server behaviour follows the vendor HowTo (see docs/api_docs/README.md)
 and what the demo and production services do: unknown delivery IDs yield an
 ``Error`` with code ``000``, a failed attachment download is an HTTP 400,
 ``Limit`` is capped at 1000 (per the XSD), and a new-only query applies its
-``Limit`` to the whole mailbox before picking the unread deliveries (critique B12).
+``Limit`` to the whole mailbox before picking the unread deliveries.
 """
 
 from __future__ import annotations
@@ -157,7 +157,7 @@ class FakeService:
             limit = min(selector.Limit or 100, SERVER_MAX_LIMIT)
             matching = [i for i, d in self.deliveries.items() if not d.read]
             # Like the real service: the window is the first `limit` deliveries of the
-            # whole mailbox; HitCount still counts all unread ones (critique B12)
+            # whole mailbox; HitCount still counts all unread ones
             page = [i for i in list(self.deliveries)[:limit] if not self.deliveries[i].read]
         else:
             raise AssertionError(f"unexpected query selector {kind}")

@@ -2,6 +2,18 @@
 
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/). The repository has no release tags; versions are the value of `usp_mp.__version__` at the time, and dates come from the git history.
 
+## [Unreleased]
+
+### Removed
+
+- The BRZ How-To PDF, its text extraction, and the example-project zip (BRZ copyright); `docs/api_docs/README.md` now links to the sources.
+- `docs/critique.md` and `docs/fix-plan.md` (internal working notes). Code comments that cited their item numbers now explain the behaviour themselves.
+- Stale notes about `xfail` tests (none are left).
+
+### Fixed
+
+- Packaging: setuptools warned that `usp_mp.certs` and `usp_mp.wsdl` were missing from the `packages` configuration, and that a future version might drop their data files from the wheel.
+
 ## [1.3.20261117] - 2026-11-17
 
 Changes since `1.2.20261117`.
@@ -32,7 +44,7 @@ Changes since `1.1.20261117`.
 
 ## [1.1.20261117] - 2026-11-17
 
-Changes since `1.0.20261117`: Phases 0–5 of `docs/fix-plan.md` (error types, pagination, the `p:Person` schema patch, typed accessors, logging, packaging, and documentation), plus the demo-service test suite.
+Changes since `1.0.20261117`: Phases 0–5 of the fix plan (error types, pagination, the `p:Person` schema patch, typed accessors, logging, packaging, and documentation), plus the demo-service test suite.
 
 **Breaking changes** (the version scheme doesn't signal them, so they are listed here):
 

@@ -203,8 +203,10 @@ class Mailbox:
         if hit_count > len(ids) and (limit is None or len(ids) < limit):
             # The service applies Limit to the whole mailbox (read and unread) and only
             # then picks the unread deliveries, and new-only queries have no offset
-            # (critique B12, confirmed on demo and production). Unread deliveries outside that window are unreachable this
-            # way; closing doesn't move them into it, deleting older ones does.
+            # (observed on demo and production; tests/test_demo.py checks it). Unread
+            # deliveries outside that window are unreachable this way; closing doesn't
+            # move them into it, deleting older ones does. Only a warning, no automatic
+            # fallback: real mailboxes hold about a dozen deliveries, far below PAGE_SIZE.
             logger.warning(
                 "%d new deliveries, but only %d returned: the service looks for unread deliveries "
                 "only among the first %d deliveries of the whole mailbox. Delete processed "

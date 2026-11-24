@@ -1,9 +1,4 @@
-"""Behaviour of Mailbox / Delivery / Attachment against the fake service.
-
-Tests marked ``xfail(strict=True)`` document open findings from docs/critique.md.
-When a fix lands they start passing, which strict mode reports as a failure:
-remove the marker then.
-"""
+"""Behaviour of Mailbox / Delivery / Attachment against the fake service."""
 
 import datetime
 import hashlib

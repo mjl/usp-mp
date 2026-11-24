@@ -1,6 +1,6 @@
 # Local changes to the vendor WSDL/XSD files
 
-The files in this directory are copies of the Mein Postkorb *Automatische Abholung* WSDL and schemas (version 2.4.0-004), taken from BRZ's Maven example project (`docs/api_docs/automatische-abholung-beispielprojekt.zip`, see `docs/api_docs/README.md`). They are bundled because the service does not serve `?wsdl`. This file records every local change, so the changes can be re-applied when the files are replaced with a newer vendor version.
+The files in this directory are copies of the Mein Postkorb *Automatische Abholung* WSDL and schemas (version 2.4.0-004), taken from BRZ's Maven example project `automatische-abholung-beispielprojekt.zip` (where to get it: `docs/api_docs/README.md`). They are bundled because the service does not serve `?wsdl`. This file records every local change, so the changes can be re-applied when the files are replaced with a newer vendor version.
 
 `zuseaa_p2.wsdl`, `zusetypes_p2.xsd` and `W3C-XMLDSig.xsd` are byte-identical to the example project. `zuse_p2.xsd` and `zuse_mypersondata_en_p2.xsd` differ only by change 1, and `zuseaa_p2.xsd` by changes 0 and 1.
 

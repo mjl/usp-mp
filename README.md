@@ -43,8 +43,6 @@ uv run --no-project --python 3.11 --with-editable '.[dev]' pytest
 uv run --no-project --python 3.14 --with-editable '.[dev]' pytest
 ```
 
-Tests marked `xfail` document known open issues from [docs/critique.md](docs/critique.md). They run in strict mode, so when a fix makes one pass, pytest reports it as a failure until its `xfail` marker is removed.
-
 ## Tests against the demo service
 
 `tests/test_demo.py` runs against the Mein Postkorb **demo (TEST) endpoint**. It covers TLS with the client certificate, querying and paging, metadata, downloads with checksum verification, the documented error responses, close/delete, and the `uspmp` CLI.
@@ -86,7 +84,7 @@ Notes:
 
 # License
 
-BSD 3-Clause; see [LICENSE](LICENSE). This doesn't cover the BRZ documents in `docs/` (see [docs/api_docs/README.md](docs/api_docs/README.md)). The bundled WSDL/XSDs are BRZ's service definition, with local changes listed in `src/usp_mp/wsdl/PATCHES.md`.
+BSD 3-Clause; see [LICENSE](LICENSE). BRZ's documents are not redistributed here (see [docs/api_docs/README.md](docs/api_docs/README.md)). The bundled WSDL/XSDs are BRZ's service definition, with local changes listed in `src/usp_mp/wsdl/PATCHES.md`.
 
 # References
 

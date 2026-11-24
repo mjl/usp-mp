@@ -96,7 +96,7 @@ def test_no_class_level_types():
     assert not hasattr(USP_MP_Adapter, "types")
 
 
-# --- p:Person substitution patch (wsdl/PATCHES.md, critique S4) ----------------------
+# --- p:Person substitution patch (wsdl/PATCHES.md) ----------------------------------
 
 RECORDED_GET_DELIVERY = Path(__file__).parent / "data" / "get_delivery_response.xml"
 WSDL_DIR = Path(USP_MP_Adapter.WSDL_PATH).parent
