@@ -2,15 +2,22 @@
 
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/). The repository has no release tags; versions are the value of `usp_mp.__version__` at the time, and dates come from the git history.
 
-## [Unreleased]
+## [1.3.20261124] - 2026-11-24
+
+Changes since `1.3.20261117`. First release on PyPI and GitHub.
 
 ### Added
 
 - Copyright and SPDX licence headers (`BSD-3-Clause`) in all Python files.
+- `[project.urls]` (GitHub repository, documentation, changelog, issues).
+
+### Changed
+
+- README: installation from PyPI; links are absolute GitHub URLs, so they work on the PyPI page.
+- `docs/api_docs/README.md` links to the BRZ documents (How-To, example project) instead of describing local copies; they are copyright BRZ and not redistributed.
 
 ### Removed
 
-- The BRZ How-To PDF, its text extraction, and the example-project zip (BRZ copyright); `docs/api_docs/README.md` now links to the sources.
 - `docs/critique.md` and `docs/fix-plan.md` (internal working notes). Code comments that cited their item numbers now explain the behaviour themselves.
 - Stale notes about `xfail` tests (none are left).
 
@@ -60,7 +67,7 @@ Changes since `1.0.20261117`: Phases 0–5 of the fix plan (error types, paginat
 
 ### Added
 
-- `docs/api_docs/README.md`: origin and licence status of the BRZ documents in `docs/`. `src/usp_mp/wsdl/PATCHES.md` also records the flattened schema paths.
+- `docs/api_docs/README.md`: where the BRZ vendor documents come from. `src/usp_mp/wsdl/PATCHES.md` also records the flattened schema paths.
 - Documentation of the bundled BRZ root CA ("Trust anchor" in `docs/howto.md`) and `tests/test_ca.py`, which pins its fingerprint and warns a year before it expires.
 - Logging under `usp_mp` (DEBUG: endpoint, connections, queries, fetches, downloads; INFO: close/delete; WARNING: truncated new-only results, unparsed response elements, a client certificate expiring within 30 days or expired). `USP_MP_Adapter.certificate_expires`.
 - Typed accessors: `Delivery.sender` and `Delivery.receiver` (a `Contact`: organisation or natural person, with identification), `Delivery.gz`, `delivery_quality`, `app_delivery_id`, `zs_delivery_id`, `delivery_service`, `origin` and `raw`; `Attachment.size`, `document_class` and `raw`.
@@ -139,7 +146,6 @@ Changes since `1.0.20260224` (commits from 2026-04-16 to 2026-11-17).
 
 ### Added
 
-- Vendor documentation under `docs/`: the original *Automatische Abholung* HowTo (PDF and text) and the example project archive.
 - Expanded `howto.md` covering prerequisites, certificate setup, CLI and library usage.
 
 ### Changed

@@ -8,13 +8,10 @@ You can retrieve new or all deliveries (Nachrichten), mark them as read or delet
 
 # Installation
 
-Requires Python 3.11 or newer. The package is not published on PyPI; install it from a checkout:
+Requires Python 3.11 or newer. Install from PyPI:
 
 ```bash
-git clone <repository-url> usp-mp
-cd usp-mp
-python -m venv .venv && . .venv/bin/activate
-pip install .
+pip install usp-mp
 ```
 
 This installs the `usp_mp` library and the `uspmp` command line tool:
@@ -23,9 +20,18 @@ This installs the `usp_mp` library and the `uspmp` command line tool:
 uspmp --help
 ```
 
-To install only the command line tool, use `pipx install .` or `uv tool install .` instead. For development, add `-e` and the test extras: `pip install -e '.[dev]'`.
+To install only the command line tool, in its own environment, use `pipx install usp-mp` or `uv tool install usp-mp` instead.
 
-You also need a client certificate (`.p12`) for the *Automatische Abholung*; see [docs/howto.md](docs/howto.md) for how to obtain one and for usage.
+To install from source, for example for development:
+
+```bash
+git clone https://github.com/mjl/usp-mp.git
+cd usp-mp
+python -m venv .venv && . .venv/bin/activate
+pip install -e '.[dev]'
+```
+
+You also need a client certificate (`.p12`) for the *Automatische Abholung*; see [docs/howto.md](https://github.com/mjl/usp-mp/blob/master/docs/howto.md) for how to obtain one and for usage.
 
 # Development
 
@@ -51,9 +57,9 @@ The demo always returns the same mock data, and the tests check it against expec
 
 1. **Invariants** that hold for any data: `HitCount` matches, paging reassembles the full list, checksums verify, and so on.
 2. **Values documented in the vendor HowTo:** the 10 delivery IDs in order, the 3 new ones, and the attachment-download example.
-3. **A golden snapshot** of everything else in [tests/data/demo_snapshot.json](tests/data/demo_snapshot.json): subjects, timestamps, and attachment IDs, names, MIME types, sizes and checksums. A mismatch lists each difference by path. If BRZ refreshes the demo data, re-record it with `--update-demo-snapshot` (plus the certificate options) and review the diff before committing.
+3. **A golden snapshot** of everything else in [tests/data/demo_snapshot.json](https://github.com/mjl/usp-mp/blob/master/tests/data/demo_snapshot.json): subjects, timestamps, and attachment IDs, names, MIME types, sizes and checksums. A mismatch lists each difference by path. If BRZ refreshes the demo data, re-record it with `--update-demo-snapshot` (plus the certificate options) and review the diff before committing.
 
-**You must bring your own client certificate and password.** Neither is part of this repository, and no test contains or defaults to one. Each person running these tests uses a `.p12` issued for their own USP account (see the certificate setup checklist in [docs/howto.md](docs/howto.md)). Without a certificate, the demo tests are skipped and everything else runs normally.
+**You must bring your own client certificate and password.** Neither is part of this repository, and no test contains or defaults to one. Each person running these tests uses a `.p12` issued for their own USP account (see the certificate setup checklist in [docs/howto.md](https://github.com/mjl/usp-mp/blob/master/docs/howto.md)). Without a certificate, the demo tests are skipped and everything else runs normally.
 
 Provide the certificate and password with pytest options or environment variables (options win):
 
@@ -84,7 +90,7 @@ Notes:
 
 # License
 
-BSD 3-Clause; see [LICENSE](LICENSE). BRZ's documents are not redistributed here (see [docs/api_docs/README.md](docs/api_docs/README.md)). The bundled WSDL/XSDs are BRZ's service definition, with local changes listed in `src/usp_mp/wsdl/PATCHES.md`.
+BSD 3-Clause; see [LICENSE](https://github.com/mjl/usp-mp/blob/master/LICENSE). BRZ's documents are not redistributed here (see [docs/api_docs/README.md](https://github.com/mjl/usp-mp/blob/master/docs/api_docs/README.md)). The bundled WSDL/XSDs are BRZ's service definition, with local changes listed in `src/usp_mp/wsdl/PATCHES.md`.
 
 # References
 

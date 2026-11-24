@@ -34,6 +34,12 @@ dependencies = [
     "cryptography>=48.0.1",   # GHSA-537c-gmf6-5ccf (vulnerable OpenSSL in wheels)
 ]
 
+[project.urls]
+Homepage = "https://github.com/mjl/usp-mp"
+Documentation = "https://github.com/mjl/usp-mp/blob/master/docs/howto.md"
+Changelog = "https://github.com/mjl/usp-mp/blob/master/docs/CHANGELOG.md"
+Issues = "https://github.com/mjl/usp-mp/issues"
+
 [project.scripts]
 uspmp = "usp_mp.cli:main"
 
